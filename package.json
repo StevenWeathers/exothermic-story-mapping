@@ -27,6 +27,7 @@
         "format": "prettier --write '{src, public}/**/*'"
     },
     "dependencies": {
+        "dragula": "^3.7.2",
         "js-cookie": "^2.2.1",
         "navaid": "^1.1.0",
         "sockette": "^2.0.6"
