@@ -327,14 +327,12 @@
                         data-columnindex="{index}">
                         {#each noteColumn.notes as note, i (note.id)}
                             <li
-                                class="max-w-xs shadow note-{note.color}
-                                border mt-5
-                                list-reset"
+                                class="max-w-xs shadow note-{note.color} border
+                                mt-5 list-reset"
                                 data-index="{i}"
                                 data-noteid="{note.id}">
                                 <div class="p-3">
-                                    <div
-                                        class="mb-2 relative flex mb-4">
+                                    <div class="mb-2 relative flex mb-4">
                                         <div class="w-1/4">
                                             <button
                                                 class="float-left"
@@ -348,8 +346,8 @@
                                                 type="text"
                                                 value="{note.title}"
                                                 on:change="{noteContentEdit(index, i, 'title')}"
-                                                class="inline font-bold
-                                                text-xl bg-transparent" />
+                                                class="inline font-bold text-xl
+                                                bg-transparent" />
                                         </div>
                                         <div class="w-1/4 text-right">
                                             <button
@@ -360,12 +358,12 @@
                                             {#if changeColor === note.id}
                                                 <div
                                                     class="shadow border
-                                                    bg-white absolute right-0 top-0">
+                                                    bg-white absolute right-0
+                                                    top-0">
                                                     {#each cardColors as color}
                                                         <button
                                                             on:click="{changeNoteColor(index, i, color)}"
-                                                            class="p-3
-                                                            hover:bg-{color}-200
+                                                            class="p-3 hover:bg-{color}-200
                                                             bg-{color}-100"></button>
                                                     {/each}
                                                 </div>
@@ -375,8 +373,7 @@
                                     <textarea
                                         style="height: {note.contentHeight ? `${note.contentHeight}px` : 'auto'}"
                                         on:mousedown="{detectElementMouseEnlargement(index, i)}"
-                                        class="w-full h-full
-                                        bg-transparent"
+                                        class="w-full h-full bg-transparent"
                                         rows="5"
                                         on:change="{noteContentEdit(index, i, 'content')}">
                                         {note.content}
@@ -387,9 +384,7 @@
                     </ul>
                 </div>
             {/each}
-            <div
-                class="m-3 bg-grey-100 w-16 self-stretch
-                flex-no-shrink">
+            <div class="m-3 bg-grey-100 w-16 self-stretch flex-no-shrink">
                 <button
                     on:click="{addNoteColumn}"
                     class="w-full h-full font-bold text-5xl text-grey">
@@ -403,7 +398,8 @@
         <div class="flex items-center">
             <div class="flex-1 text-center">
                 {#if socketReconnecting}
-                    <h1 class="text-5xl text-orange-500 leading-tight font-bold">
+                    <h1
+                        class="text-5xl text-orange-500 leading-tight font-bold">
                         Ooops, reloading Storyboard...
                     </h1>
                 {:else if socketError}
