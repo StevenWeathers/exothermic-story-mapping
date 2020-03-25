@@ -59,6 +59,12 @@
     .btn-hollow-orange:hover {
         @apply bg-orange-600;
     }
+    .btn-hollow-gray {
+        @apply border-gray-500 text-gray-500;
+    }
+    .btn-hollow-gray:hover {
+        @apply bg-gray-600;
+    }
 </style>
 
 {#if href === ''}

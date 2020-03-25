@@ -1,5 +1,9 @@
+<script>
+    export let additionalClasses = ''
+</script>
+
 <svg
-    class="fill-current inline h-4 w-4"
+    class="fill-current inline h-4 w-4 {additionalClasses}"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 20 20">
     <path

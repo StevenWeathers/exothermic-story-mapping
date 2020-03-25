@@ -7,9 +7,11 @@
     import PageLayout from '../components/PageLayout.svelte'
     import UserCard from '../components/UserCard.svelte'
     import InviteUser from '../components/InviteUser.svelte'
+    import UsersIcon from '../components/icons/UsersIcon.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import TimesIcon from '../components/icons/TimesIcon.svelte'
     import DropperIcon from '../components/icons/DropperIcon.svelte'
+    import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
 
     import { user } from '../stores.js'
 
@@ -44,10 +46,10 @@
     let socketError = false
     let socketReconnecting = false
     let storyboard = {}
+    let showUsers = false
 
     // All the Stateful things...
     let notesColumns = []
-
     let changeColor = ''
 
     // event handlers
@@ -231,6 +233,10 @@
         sendSocketEvent('concede_storyboard', '')
     }
 
+    function toggleUsersPanel() {
+        showUsers = !showUsers
+    }
+
     onMount(() => {
         if (!$user.id) {
             router.route(`/register/${storyboardId}`)
@@ -309,6 +315,50 @@
 </svelte:head>
 
 {#if storyboard.name && !socketReconnecting && !socketError}
+    <div class="px-6 py-2 bg-white flex flex-wrap">
+        <div class="w-2/3">
+            <h1 class="text-3xl font-bold leading-tight">
+                {storyboard.name}
+            </h1>
+        </div>
+        <div class="w-1/3 text-right relative">
+            <div>
+                {#if storyboard.ownerId === $user.id}
+                    <HollowButton
+                        color="red"
+                        onClick="{concedeStoryboard}"
+                        additionalClasses="mr-2"
+                    >
+                        Delete Storyboard
+                    </HollowButton>
+                {/if}
+                <HollowButton
+                    color="gray"
+                    additionalClasses="mr-2 transition ease-in-out duration-150"
+                    onClick="{toggleUsersPanel}"
+                >
+                    <UsersIcon additionalClasses="mr-1" height="18" width="18" />
+                    Users
+                    <DownCarrotIcon additionalClasses="ml-1" />
+                </HollowButton>
+            </div>
+            {#if showUsers}
+            <div class="origin-top-right absolute right-0 mt-1 w-64 rounded-md shadow-lg text-left">
+                <div class="rounded-md bg-white shadow-xs">
+                    {#each storyboard.users as usr, index (usr.id)}
+                        {#if usr.active}
+                            <UserCard user="{usr}" {sendSocketEvent} showBorder={index != storyboard.users.length - 1} />
+                        {/if}
+                    {/each}
+
+                    <div class="p-2">
+                        <InviteUser {hostname} storyboardId="{storyboard.id}" />
+                    </div>
+                </div>
+            </div>
+            {/if}
+        </div>
+    </div>
     <div class="h-screen">
         <section
             class="flex items-stretch min-h-full"
@@ -317,8 +367,7 @@
                 <div class="flex-no-shrink m-3" style="width: 320px">
                     <button
                         on:click="{addNote(index)}"
-                        class="w-full font-bold text-3xl text-grey-500
-                        bg-grey-100 p-1">
+                        class="w-full font-bold text-3xl bg-gray-300 p-1">
                         +
                     </button>
                     <ul
@@ -384,7 +433,7 @@
                     </ul>
                 </div>
             {/each}
-            <div class="m-3 bg-grey-100 w-16 self-stretch flex-no-shrink">
+            <div class="m-3 bg-gray-300 w-16 self-stretch flex-no-shrink">
                 <button
                     on:click="{addNoteColumn}"
                     class="w-full h-full font-bold text-5xl text-grey">
