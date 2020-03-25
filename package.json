@@ -1,0 +1,117 @@
+{
+    "name": "exothermic-story-mapping",
+    "version": "0.0.1",
+    "description": "Agile Story Mapping App",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/StevenWeathers/exothermic-story-mapping.git"
+    },
+    "author": "Steven Weathers",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/StevenWeathers/exothermic-story-mapping/issues"
+    },
+    "homepage": "https://github.com/StevenWeathers/exothermic-story-mapping#readme",
+    "private": true,
+    "scripts": {
+        "build": "rollup -c",
+        "autobuild": "rollup -c -w",
+        "dev": "run-p start:dev autobuild",
+        "start": "sirv public",
+        "start:dev": "sirv public --dev",
+        "test": "jest __test__/unit",
+        "test:watch": "npm run test -- --watch",
+        "test:integration": "jest -c __test__/integration/jest.config.js",
+        "test:integrationWithWatch": "jest -c __test__/integration/jest.config.js --watch",
+        "test:integrationProd": "cross-env APP_URL='https://exothermic.dev' jest -c __test__/integration/jest.config.js",
+        "format": "prettier --write '{src, public}/**/*'"
+    },
+    "dependencies": {
+        "js-cookie": "^2.2.1",
+        "navaid": "^1.1.0",
+        "sockette": "^2.0.6"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.8.7",
+        "@babel/preset-env": "^7.8.7",
+        "@fullhuman/postcss-purgecss": "^1.3.0",
+        "@testing-library/jest-dom": "^4.2.4",
+        "@testing-library/svelte": "^1.11.2",
+        "autoprefixer": "^9.7.4",
+        "babel-jest": "^24.9.0",
+        "babel-loader": "^8.0.6",
+        "cross-env": "^5.2.1",
+        "husky": "^3.1.0",
+        "jest": "^24.9.0",
+        "jest-puppeteer": "^4.4.0",
+        "jest-transform-svelte": "^2.1.1",
+        "lint-staged": "^9.5.0",
+        "npm-run-all": "^4.1.5",
+        "postcss": "^7.0.27",
+        "postcss-import": "^12.0.1",
+        "prettier": "^1.18.2",
+        "prettier-plugin-svelte": "^0.7.0",
+        "puppeteer": "^1.20.0",
+        "rollup": "^1.32.1",
+        "rollup-plugin-bundle-html": "^0.2.2",
+        "rollup-plugin-commonjs": "^9.3.4",
+        "rollup-plugin-copy": "^2.0.1",
+        "rollup-plugin-delete": "^1.2.0",
+        "rollup-plugin-livereload": "^1.0.4",
+        "rollup-plugin-node-resolve": "^4.2.4",
+        "rollup-plugin-postcss": "^2.5.0",
+        "rollup-plugin-svelte": "^5.1.1",
+        "rollup-plugin-terser": "^4.0.4",
+        "sirv-cli": "^0.4.5",
+        "standard": "^12.0.1",
+        "svelte": "^3.20.1",
+        "svelte-loader": "^2.13.6",
+        "svelte-preprocess": "^3.5.0",
+        "tailwindcss": "^1.2.0"
+    },
+    "prettier": {
+        "singleQuote": true,
+        "trailingComma": "all",
+        "printWidth": 80,
+        "proseWrap": "always",
+        "tabWidth": 4,
+        "useTabs": false,
+        "bracketSpacing": true,
+        "semi": false,
+        "arrowParens": "avoid",
+        "svelteSortOrder": "scripts-styles-markup",
+        "svelteStrictMode": true
+    },
+    "jest": {
+        "transform": {
+            "^.+\\.svelte$": "jest-transform-svelte",
+            "^.+\\.js$": "babel-jest"
+        },
+        "moduleFileExtensions": [
+            "js",
+            "svelte"
+        ],
+        "testPathIgnorePatterns": [
+            "node_modules"
+        ],
+        "bail": false,
+        "verbose": true,
+        "transformIgnorePatterns": [
+            "node_modules"
+        ],
+        "setupFilesAfterEnv": [
+            "@testing-library/jest-dom/extend-expect"
+        ]
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged"
+        }
+    },
+    "lint-staged": {
+        "*.{js, svelte, css, html}": [
+            "npm run format",
+            "git add"
+        ]
+    }
+}
