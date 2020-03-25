@@ -334,7 +334,7 @@
                 {/if}
                 <HollowButton
                     color="gray"
-                    additionalClasses="mr-2 transition ease-in-out duration-150"
+                    additionalClasses="transition ease-in-out duration-150"
                     onClick="{toggleUsersPanel}"
                 >
                     <UsersIcon additionalClasses="mr-1" height="18" width="18" />
