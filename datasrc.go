@@ -556,17 +556,18 @@ func ReviseStoryColor(StoryboardID string, userID string, StoryID string, StoryC
 }
 
 // MoveStoryboardStory moves the story by ID to Goal/Column by ID
-func MoveStoryboardStory(StoryboardID string, userID string, StoryID string, GoalID string, ColumnID string) ([]*StoryboardGoal, error) {
+func MoveStoryboardStory(StoryboardID string, userID string, StoryID string, GoalID string, ColumnID string, PlaceBefore string) ([]*StoryboardGoal, error) {
 	err := ConfirmOwner(StoryboardID, userID)
 	if err != nil {
 		return nil, errors.New("Incorrect permissions")
 	}
 
 	if _, err := db.Exec(
-		`call move_story($1, $2, $3);`,
+		`call move_story($1, $2, $3, $4);`,
 		StoryID,
 		GoalID,
 		ColumnID,
+		PlaceBefore,
 	); err != nil {
 		log.Println(err)
 	}

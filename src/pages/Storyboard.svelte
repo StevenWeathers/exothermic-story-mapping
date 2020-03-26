@@ -113,10 +113,13 @@
         )
     }
 
-    drake.on('drop', function(el, target) {
+    drake.on('drop', function(el, target, source, sibling) {
         const storyId = el.dataset.storyid
         const goalId = target.dataset.goalid
         const columnId = target.dataset.columnid
+
+        // determine what story to place story before in target column
+        const placeBefore = sibling ? sibling.dataset.storyid : '';
 
         sendSocketEvent(
             'move_story',
@@ -124,6 +127,7 @@
                 storyId,
                 goalId,
                 columnId,
+                placeBefore
             }),
         )
     })

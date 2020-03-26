@@ -194,8 +194,9 @@ func (s subscription) readPump() {
 			StoryID := goalObj["storyId"]
 			GoalID := goalObj["goalId"]
 			ColumnID := goalObj["columnId"]
+			PlaceBefore := goalObj["placeBefore"]
 
-			goals, err := MoveStoryboardStory(storyboardID, userID, StoryID, GoalID, ColumnID)
+			goals, err := MoveStoryboardStory(storyboardID, userID, StoryID, GoalID, ColumnID, PlaceBefore)
 			if err != nil {
 				badEvent = true
 				break
