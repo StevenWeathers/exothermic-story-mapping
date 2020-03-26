@@ -24,7 +24,7 @@
         "test:integration": "jest -c __test__/integration/jest.config.js",
         "test:integrationWithWatch": "jest -c __test__/integration/jest.config.js --watch",
         "test:integrationProd": "cross-env APP_URL='https://exothermic.dev' jest -c __test__/integration/jest.config.js",
-        "format": "prettier --write '{src, public}/**/*'"
+        "format": "prettier --write --plugin-search-dir=. '{src, public}/**/*'"
     },
     "dependencies": {
         "dragula": "^3.7.2",

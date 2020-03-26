@@ -119,7 +119,7 @@
         const columnId = target.dataset.columnid
 
         // determine what story to place story before in target column
-        const placeBefore = sibling ? sibling.dataset.storyid : '';
+        const placeBefore = sibling ? sibling.dataset.storyid : ''
 
         sendSocketEvent(
             'move_story',
@@ -127,7 +127,7 @@
                 storyId,
                 goalId,
                 columnId,
-                placeBefore
+                placeBefore,
             }),
         )
     })
@@ -521,9 +521,8 @@
                                             style="height: {story.contentHeight ? `${story.contentHeight}px` : 'auto'}"
                                             class="w-full h-full bg-transparent"
                                             rows="4"
-                                            on:change="{storyUpdateContent(story.id)}">
-                                            {story.content}
-                                        </textarea>
+                                            on:change="{storyUpdateContent(story.id)}"
+                                            value="{story.content}"></textarea>
                                     </div>
                                 </li>
                             {/each}
