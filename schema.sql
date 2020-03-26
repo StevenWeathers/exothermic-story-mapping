@@ -228,19 +228,34 @@ BEGIN
         storyboardId, srcGoalId, srcColumnId, srcSortOrder, storyName, storyColor, storyContent, createdDate
     FROM storyboard_story WHERE id = storyId;
 
-    -- Remove from source column, updating sort order in column
-    DELETE FROM storyboard_story WHERE id = storyId;
-    UPDATE storyboard_story SET sort_order = (sort_order - 1) WHERE column_id = srcColumnId AND sort_order > srcSortOrder;
-
     -- Get target sort order
     IF placeBefore = '' THEN
         SELECT coalesce(max(sort_order), 0) + 1 INTO targetSortOrder FROM storyboard_story WHERE column_id = columnId;
     ELSE
-        SELECT sort_order - 1 INTO targetSortOrder FROM storyboard_story WHERE column_id = columnId AND id = placeBefore::UUID;
+        SELECT sort_order INTO targetSortOrder FROM storyboard_story WHERE column_id = columnId AND id = placeBefore::UUID;
     END IF;
 
+    -- Remove from source column
+    DELETE FROM storyboard_story WHERE id = storyId;
+    -- Update sort order in src column
+    UPDATE storyboard_story ss SET sort_order = (t.sort_order - 1)
+    FROM (
+        SELECT id, sort_order FROM storyboard_story
+        WHERE column_id = srcColumnId AND sort_order > srcSortOrder
+        ORDER BY sort_order ASC
+        FOR UPDATE
+    ) AS t
+    WHERE ss.id = t.id;
+
     -- Update sort order for any story that should come after newly moved story
-    UPDATE storyboard_story SET sort_order = (sort_order - 1) WHERE column_id = srcColumnId AND sort_order > targetSortOrder;
+    UPDATE storyboard_story ss SET sort_order = (t.sort_order + 1)
+    FROM (
+        SELECT id, sort_order FROM storyboard_story
+        WHERE column_id = columnId AND sort_order >= targetSortOrder
+        ORDER BY sort_order DESC
+        FOR UPDATE
+    ) AS t
+    WHERE ss.id = t.id;
 
     -- Finally, insert new story in its ordered place
     INSERT INTO
