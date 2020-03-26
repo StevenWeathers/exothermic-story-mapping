@@ -135,14 +135,15 @@ $$;
 -- Delete a Storyboard Goal --
 CREATE OR REPLACE PROCEDURE delete_storyboard_goal(goalId UUID)
 LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
 DECLARE sortOrder INTEGER;
 BEGIN
-    sortOrder := (SELECT sort_order FROM storyboard_goal WHERE id = goalId);
+    SELECT sort_order, storyboard_id INTO sortOrder, storyboardId FROM storyboard_goal WHERE id = goalId;
 
     DELETE FROM storyboard_story WHERE goal_id = goalId;
     DELETE FROM storyboard_column WHERE goal_id = goalId;
     DELETE FROM storyboard_goal WHERE id = goalId;
-    UPDATE storyboard_goal sg SET sort_order = (sg.sort_order - 1) WHERE sg.sort_order > sortOrder;
+    UPDATE storyboard_goal sg SET sort_order = (sg.sort_order - 1) WHERE sg.storyboard_id = storyBoardId AND sg.sort_order > sortOrder;
     
     COMMIT;
 END;
