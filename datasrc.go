@@ -405,7 +405,7 @@ func GetStoryboardGoals(StoryboardID string) []*StoryboardGoal {
 				sg.id,
 				sg.sort_order,
 				sg.name,
-				COALESCE(json_agg(to_jsonb(t) - 'goal_id') FILTER (WHERE t.id IS NOT NULL), '[]') AS columns
+				COALESCE(json_agg(to_jsonb(t) - 'goal_id' ORDER BY t.sort_order) FILTER (WHERE t.id IS NOT NULL), '[]') AS columns
 			FROM storyboard_goal sg
 			LEFT JOIN (
 				SELECT
@@ -416,7 +416,6 @@ func GetStoryboardGoals(StoryboardID string) []*StoryboardGoal {
 				FROM storyboard_column sc
 				LEFT JOIN storyboard_story ss ON ss.column_id = sc.id
 				GROUP BY sc.id
-				ORDER BY sc.sort_order
 			) t ON t.goal_id = sg.id
 			WHERE sg.storyboard_id = $1
 			GROUP BY sg.id
