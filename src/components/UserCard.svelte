@@ -1,8 +1,8 @@
 <script>
     export let user = {}
-    export let showBorder = "true"
+    export let showBorder = 'true'
 
-    $: borderClasses = showBorder === "true" ? 'border-b border-gray-500' : ''
+    $: borderClasses = showBorder === 'true' ? 'border-b border-gray-500' : ''
 </script>
 
 <div
@@ -11,8 +11,7 @@
     data-userName="{user.name}">
     <img
         src="https://api.adorable.io/avatars/32/{user.id}.png"
-        alt="Placeholder Avatar"
-    />
+        alt="Placeholder Avatar" />
     <p
         class="ml-2 text-l font-bold leading-tight truncate"
         data-testId="userName"

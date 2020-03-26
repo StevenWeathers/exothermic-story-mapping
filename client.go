@@ -95,6 +95,121 @@ func (s subscription) readPump() {
 		storyboardID := s.arena
 
 		switch keyVal["type"] {
+		case "add_goal":
+			goals, err := CreateStoryboardGoal(storyboardID, userID, keyVal["value"])
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("goal_added", string(updatedGoals), "")
+		case "revise_goal":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			GoalID := goalObj["goalId"]
+			GoalName := goalObj["name"]
+
+			goals, err := ReviseGoalName(storyboardID, userID, GoalID, GoalName)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("goal_revised", string(updatedGoals), "")
+		case "delete_goal":
+			goals, err := DeleteStoryboardGoal(storyboardID, userID, keyVal["value"])
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("goal_deleted", string(updatedGoals), "")
+		case "add_column":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			GoalID := goalObj["goalId"]
+
+			goals, err := CreateStoryboardColumn(storyboardID, GoalID, userID)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("column_added", string(updatedGoals), "")
+		case "add_story":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			GoalID := goalObj["goalId"]
+			ColumnID := goalObj["columnId"]
+
+			goals, err := CreateStoryboardStory(storyboardID, GoalID, ColumnID, userID)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_added", string(updatedGoals), "")
+		case "update_story_name":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			StoryID := goalObj["storyId"]
+			StoryName := goalObj["name"]
+
+			goals, err := ReviseStoryName(storyboardID, userID, StoryID, StoryName)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_updated", string(updatedGoals), "")
+		case "update_story_content":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			StoryID := goalObj["storyId"]
+			StoryContent := goalObj["content"]
+
+			goals, err := ReviseStoryContent(storyboardID, userID, StoryID, StoryContent)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_updated", string(updatedGoals), "")
+		case "update_story_color":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			StoryID := goalObj["storyId"]
+			StoryColor := goalObj["color"]
+
+			goals, err := ReviseStoryColor(storyboardID, userID, StoryID, StoryColor)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_updated", string(updatedGoals), "")
+		case "move_story":
+			goalObj := make(map[string]string)
+			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
+			StoryID := goalObj["storyId"]
+			GoalID := goalObj["goalId"]
+			ColumnID := goalObj["columnId"]
+
+			goals, err := MoveStoryboardStory(storyboardID, userID, StoryID, GoalID, ColumnID)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_moved", string(updatedGoals), "")
+		case "delete_story":
+			goals, err := DeleteStoryboardStory(storyboardID, userID, keyVal["value"])
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_deleted", string(updatedGoals), "")
 		case "promote_owner":
 			storyboard, err := SetStoryboardOwner(storyboardID, userID, keyVal["value"])
 			if err != nil {

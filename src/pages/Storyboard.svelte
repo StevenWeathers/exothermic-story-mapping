@@ -4,6 +4,7 @@
     import { onMount, onDestroy } from 'svelte'
 
     import guid from '../generateGuid.js'
+    import AddGoal from '../components/AddGoal.svelte'
     import PageLayout from '../components/PageLayout.svelte'
     import UserCard from '../components/UserCard.svelte'
     import InviteUser from '../components/InviteUser.svelte'
@@ -45,120 +46,116 @@
 
     let socketError = false
     let socketReconnecting = false
-    let storyboard = {}
+    let storyboard = {
+        ownerId: '',
+        goals: [],
+        users: [],
+    }
     let showUsers = false
-
-    // All the Stateful things...
-    let notesColumns = []
     let changeColor = ''
 
     // event handlers
-    const addNote = index => () => {
-        const id = guid()
-
-        notesColumns[index].notes[notesColumns[index].notes.length] = {
-            id,
-            color: defaultColor,
-            title: 'Note Title Here',
-            content: `Note Content Here ${id}`,
-            contentHeight: null,
-        }
-
-        sendChanges()
+    const addStory = (goalId, columnId) => () => {
+        sendSocketEvent(
+            'add_story',
+            JSON.stringify({
+                goalId,
+                columnId,
+            }),
+        )
     }
 
-    const deleteNote = (column, index) => () => {
-        notesColumns[column].notes.splice(index, 1)
-        notesColumns = notesColumns
-
-        sendChanges()
+    const deleteStory = storyId => () => {
+        sendSocketEvent('delete_story', storyId)
     }
 
-    const addNoteColumn = () => {
-        notesColumns[notesColumns.length] = {
-            id: guid(),
-            notes: [],
-        }
-
-        sendChanges()
+    const addStoryColumn = goalId => () => {
+        sendSocketEvent(
+            'add_column',
+            JSON.stringify({
+                goalId,
+            }),
+        )
     }
 
     const showChangeColor = id => () => (changeColor = id)
 
-    const changeNoteColor = (column, index, color) => () => {
-        notesColumns[column].notes[index].color = color
+    const changeStoryColor = (storyId, color) => () => {
+        sendSocketEvent(
+            'update_story_color',
+            JSON.stringify({
+                storyId,
+                color,
+            }),
+        )
         changeColor = ''
-
-        sendChanges()
     }
 
-    const noteContentEdit = (column, index, type) => event => {
-        notesColumns[column].notes[index][type] = event.target.value
-
-        sendChanges()
+    const storyUpdateName = storyId => evt => {
+        const name = event.target.value
+        sendSocketEvent(
+            'update_story_name',
+            JSON.stringify({
+                storyId,
+                name,
+            }),
+        )
     }
 
-    drake.on('drop', function(el, target, source, sibling) {
-        const noteId = el.dataset.noteid
-        const targetColIndex = target.dataset.columnindex
-        const sourceColIndex = source.dataset.columnindex
-
-        // determine what order to place note in column
-        const finalIndex = sibling
-            ? sibling.dataset.index
-            : notesColumns[targetColIndex].notes.length
-
-        const note = notesColumns[sourceColIndex].notes.find(
-            n => n.id === noteId,
+    const storyUpdateContent = storyId => evt => {
+        const content = event.target.value
+        sendSocketEvent(
+            'update_story_content',
+            JSON.stringify({
+                storyId,
+                content,
+            }),
         )
+    }
 
-        // remote note from source column
-        notesColumns[sourceColIndex].notes.splice(
-            notesColumns[sourceColIndex].notes.indexOf(note),
-            1,
+    drake.on('drop', function(el, target) {
+        const storyId = el.dataset.storyid
+        const goalId = target.dataset.goalid
+        const columnId = target.dataset.columnid
+
+        sendSocketEvent(
+            'move_story',
+            JSON.stringify({
+                storyId,
+                goalId,
+                columnId,
+            }),
         )
-
-        // add note to target column
-        notesColumns[targetColIndex].notes.splice(finalIndex, 0, note)
-
-        // finally update state
-        notesColumns = notesColumns
-
-        sendChanges()
     })
 
     // catch and update textarea adjusted size in data
-    const detectElementMouseEnlargement = (column, index) => ev => {
-        const element = ev.target
-        const size = { height: element.clientHeight }
-        let styleHeight = parseFloat(
-            getComputedStyle(element)['height'].replace('px', ''),
-        )
+    // const detectElementMouseEnlargement = (column, index) => ev => {
+    //     const element = ev.target
+    //     const size = { height: element.clientHeight }
+    //     let styleHeight = parseFloat(
+    //         getComputedStyle(element)['height'].replace('px', ''),
+    //     )
 
-        const mouseMoveListener = event => {
-            if (element.clientHeight != size.height) {
-                let style = getComputedStyle(element)
-                styleHeight = parseFloat(style['height'].replace('px', ''))
+    //     const mouseMoveListener = event => {
+    //         if (element.clientHeight != size.height) {
+    //             let style = getComputedStyle(element)
+    //             styleHeight = parseFloat(style['height'].replace('px', ''))
 
-                size.height = element.clientHeight
-            }
-        }
+    //             size.height = element.clientHeight
+    //         }
+    //     }
 
-        const mouseUpListener = event => {
-            window.removeEventListener('mousemove', mouseMoveListener)
-            window.removeEventListener('mouseup', mouseUpListener)
-            notesColumns[column].notes[index].contentHeight = styleHeight
+    //     const mouseUpListener = event => {
+    //         window.removeEventListener('mousemove', mouseMoveListener)
+    //         window.removeEventListener('mouseup', mouseUpListener)
+    //         storysColumns[column].storys[index].contentHeight = styleHeight
 
-            sendChanges()
-        }
+    //         sendChanges()
+    //     }
 
-        window.addEventListener('mousemove', mouseMoveListener)
-        window.addEventListener('mouseup', mouseUpListener)
-    }
-
-    const sendChanges = () => {
-        sendSocketEvent('stories_updated', notesColumns)
-    }
+    //     window.addEventListener('mousemove', mouseMoveListener)
+    //     window.addEventListener('mouseup', mouseUpListener)
+    // }
 
     const onSocketMessage = function(evt) {
         const parsedEvent = JSON.parse(evt.data)
@@ -184,6 +181,33 @@
                 break
             case 'storyboard_updated':
                 storyboard = JSON.parse(parsedEvent.value)
+                break
+            case 'goal_added':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'goal_revised':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'goal_deleted':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'column_added':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'column_updated':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'story_added':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'story_updated':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'story_moved':
+                storyboard.goals = JSON.parse(parsedEvent.value)
+                break
+            case 'story_deleted':
+                storyboard.goals = JSON.parse(parsedEvent.value)
                 break
             case 'storyboard_conceded':
                 // storyboard over, goodbye.
@@ -237,6 +261,34 @@
         showUsers = !showUsers
     }
 
+    let showAddGoal = false
+    let reviseGoalId = ''
+    let reviseGoalName = ''
+
+    const toggleAddGoal = goalId => () => {
+        if (goalId) {
+            const goalName = storyboard.goals.find(p => p.id === goalId).name
+            reviseGoalId = goalId
+            reviseGoalName = goalName
+        } else {
+            reviseGoalId = ''
+            reviseGoalName = ''
+        }
+        showAddGoal = !showAddGoal
+    }
+
+    const handleGoalAdd = goalName => {
+        sendSocketEvent('add_goal', goalName)
+    }
+
+    const handleGoalRevision = updatedGoal => {
+        sendSocketEvent('revise_goal', JSON.stringify(updatedGoal))
+    }
+
+    const handleGoalDeletion = goalId => () => {
+        sendSocketEvent('delete_goal', goalId)
+    }
+
     onMount(() => {
         if (!$user.id) {
             router.route(`/register/${storyboardId}`)
@@ -272,39 +324,39 @@
         filter: alpha(opacity=20);
     }
 
-    .note-red {
+    .story-red {
         @apply bg-red-100;
         @apply border-red-200;
     }
-    .note-orange {
+    .story-orange {
         @apply bg-orange-100;
         @apply border-orange-200;
     }
-    .note-yellow {
+    .story-yellow {
         @apply bg-yellow-100;
         @apply border-yellow-200;
     }
-    .note-green {
+    .story-green {
         @apply bg-green-100;
         @apply border-green-200;
     }
-    .note-teal {
+    .story-teal {
         @apply bg-teal-100;
         @apply border-teal-200;
     }
-    .note-blue {
+    .story-blue {
         @apply bg-blue-100;
         @apply border-blue-200;
     }
-    .note-indigo {
+    .story-indigo {
         @apply bg-indigo-100;
         @apply border-indigo-200;
     }
-    .note-purple {
+    .story-purple {
         @apply bg-purple-100;
         @apply border-purple-200;
     }
-    .note-pink {
+    .story-pink {
         @apply bg-pink-100;
         @apply border-pink-200;
     }
@@ -317,131 +369,173 @@
 {#if storyboard.name && !socketReconnecting && !socketError}
     <div class="px-6 py-2 bg-white flex flex-wrap">
         <div class="w-2/3">
-            <h1 class="text-3xl font-bold leading-tight">
-                {storyboard.name}
-            </h1>
+            <h1 class="text-3xl font-bold leading-tight">{storyboard.name}</h1>
         </div>
         <div class="w-1/3 text-right relative">
             <div>
                 {#if storyboard.ownerId === $user.id}
                     <HollowButton
+                        color="orange"
+                        onClick="{toggleAddGoal()}"
+                        additionalClasses="mr-2">
+                        Add Goal
+                    </HollowButton>
+                    <HollowButton
                         color="red"
                         onClick="{concedeStoryboard}"
-                        additionalClasses="mr-2"
-                    >
+                        additionalClasses="mr-2">
                         Delete Storyboard
                     </HollowButton>
                 {/if}
                 <HollowButton
                     color="gray"
                     additionalClasses="transition ease-in-out duration-150"
-                    onClick="{toggleUsersPanel}"
-                >
-                    <UsersIcon additionalClasses="mr-1" height="18" width="18" />
+                    onClick="{toggleUsersPanel}">
+                    <UsersIcon
+                        additionalClasses="mr-1"
+                        height="18"
+                        width="18" />
                     Users
                     <DownCarrotIcon additionalClasses="ml-1" />
                 </HollowButton>
             </div>
             {#if showUsers}
-            <div class="origin-top-right absolute right-0 mt-1 w-64 rounded-md shadow-lg text-left">
-                <div class="rounded-md bg-white shadow-xs">
-                    {#each storyboard.users as usr, index (usr.id)}
-                        {#if usr.active}
-                            <UserCard user="{usr}" {sendSocketEvent} showBorder={index != storyboard.users.length - 1} />
-                        {/if}
-                    {/each}
+                <div
+                    class="origin-top-right absolute right-0 mt-1 w-64
+                    rounded-md shadow-lg text-left">
+                    <div class="rounded-md bg-white shadow-xs">
+                        {#each storyboard.users as usr, index (usr.id)}
+                            {#if usr.active}
+                                <UserCard
+                                    user="{usr}"
+                                    {sendSocketEvent}
+                                    showBorder="{index != storyboard.users.length - 1}" />
+                            {/if}
+                        {/each}
 
-                    <div class="p-2">
-                        <InviteUser {hostname} storyboardId="{storyboard.id}" />
+                        <div class="p-2">
+                            <InviteUser
+                                {hostname}
+                                storyboardId="{storyboard.id}" />
+                        </div>
                     </div>
                 </div>
-            </div>
             {/if}
         </div>
     </div>
-    <div class="h-screen">
-        <section
-            class="flex items-stretch min-h-full"
-            style="overflow-x: scroll">
-            {#each notesColumns as noteColumn, index}
-                <div class="flex-no-shrink m-3" style="width: 320px">
+    {#each storyboard.goals as goal, goalIndex (goal.id)}
+        <div data-goalid="{goal.id}">
+            <div
+                class="flex px-6 py-2 border-b-2 border-gray-300 {goalIndex > 0 ? 'border-t-2' : ''}">
+                <div class="w-3/4 relative">
+                    <div class="inline-block align-middle font-bold">
+                        <DownCarrotIcon additionalClasses="mr-1" />
+                        {goal.name}
+                    </div>
+                </div>
+                <div class="w-1/4 text-right">
+                    {#if storyboard.ownerId === $user.id}
+                        <HollowButton
+                            color="orange"
+                            onClick="{toggleAddGoal(goal.id)}"
+                            btnSize="small">
+                            Edit
+                        </HollowButton>
+                        <HollowButton
+                            color="red"
+                            onClick="{handleGoalDeletion(goal.id)}"
+                            btnSize="small"
+                            additionalClasses="ml-2">
+                            Delete
+                        </HollowButton>
+                    {/if}
+                </div>
+            </div>
+            <section
+                class="flex items-stretch"
+                style="overflow-x: scroll; min-height: 260px">
+                {#each goal.columns as goalColumn (goalColumn.id)}
+                    <div class="flex-no-shrink m-3" style="width: 280px">
+                        <button
+                            on:click="{addStory(goal.id, goalColumn.id)}"
+                            class="w-full font-bold text-xl bg-gray-300 p-1">
+                            +
+                        </button>
+                        <ul
+                            class="drop-column list-reset w-full min-h-full"
+                            data-goalid="{goal.id}"
+                            data-columnid="{goalColumn.id}">
+                            {#each goalColumn.stories as story (story.id)}
+                                <li
+                                    class="max-w-xs shadow story-{story.color}
+                                    border mt-5 list-reset"
+                                    data-goalid="{goal.id}"
+                                    data-columnid="{goalColumn.id}"
+                                    data-storyid="{story.id}">
+                                    <div class="p-3">
+                                        <div class="mb-2 relative flex mb-4">
+                                            <div class="w-1/5">
+                                                <button
+                                                    class="float-left"
+                                                    on:click="{deleteStory(story.id)}">
+                                                    <TimesIcon
+                                                        color="{story.color}" />
+                                                </button>
+                                            </div>
+                                            <div class="w-3/5">
+                                                <input
+                                                    type="text"
+                                                    value="{story.name}"
+                                                    on:change="{storyUpdateName(story.id)}"
+                                                    class="inline font-bold
+                                                    text-xl bg-transparent" />
+                                            </div>
+                                            <div class="w-1/5 text-right">
+                                                <button
+                                                    on:click="{showChangeColor(story.id)}">
+                                                    <DropperIcon
+                                                        color="{story.color}" />
+                                                </button>
+                                                {#if changeColor === story.id}
+                                                    <div
+                                                        class="shadow border
+                                                        bg-white absolute
+                                                        right-0 top-0">
+                                                        {#each cardColors as color}
+                                                            <button
+                                                                on:click="{changeStoryColor(story.id, color)}"
+                                                                class="p-3
+                                                                hover:bg-{color}-200
+                                                                bg-{color}-100"></button>
+                                                        {/each}
+                                                    </div>
+                                                {/if}
+                                            </div>
+                                        </div>
+                                        <!-- on:mousedown="{detectElementMouseEnlargement(story.id)}" -->
+                                        <textarea
+                                            style="height: {story.contentHeight ? `${story.contentHeight}px` : 'auto'}"
+                                            class="w-full h-full bg-transparent"
+                                            rows="4"
+                                            on:change="{storyUpdateContent(story.id)}">
+                                            {story.content}
+                                        </textarea>
+                                    </div>
+                                </li>
+                            {/each}
+                        </ul>
+                    </div>
+                {/each}
+                <div class="m-3 bg-gray-300 w-16 self-stretch flex-no-shrink">
                     <button
-                        on:click="{addNote(index)}"
-                        class="w-full font-bold text-3xl bg-gray-300 p-1">
+                        on:click="{addStoryColumn(goal.id)}"
+                        class="w-full h-full font-bold text-xl text-grey">
                         +
                     </button>
-                    <ul
-                        class="drop-column list-reset w-full min-h-full"
-                        data-columnid="{noteColumn.id}"
-                        data-columnindex="{index}">
-                        {#each noteColumn.notes as note, i (note.id)}
-                            <li
-                                class="max-w-xs shadow note-{note.color} border
-                                mt-5 list-reset"
-                                data-index="{i}"
-                                data-noteid="{note.id}">
-                                <div class="p-3">
-                                    <div class="mb-2 relative flex mb-4">
-                                        <div class="w-1/4">
-                                            <button
-                                                class="float-left"
-                                                on:click="{deleteNote(index, i)}">
-                                                <TimesIcon
-                                                    color="{note.color}" />
-                                            </button>
-                                        </div>
-                                        <div class="w-2/4">
-                                            <input
-                                                type="text"
-                                                value="{note.title}"
-                                                on:change="{noteContentEdit(index, i, 'title')}"
-                                                class="inline font-bold text-xl
-                                                bg-transparent" />
-                                        </div>
-                                        <div class="w-1/4 text-right">
-                                            <button
-                                                on:click="{showChangeColor(note.id)}">
-                                                <DropperIcon
-                                                    color="{note.color}" />
-                                            </button>
-                                            {#if changeColor === note.id}
-                                                <div
-                                                    class="shadow border
-                                                    bg-white absolute right-0
-                                                    top-0">
-                                                    {#each cardColors as color}
-                                                        <button
-                                                            on:click="{changeNoteColor(index, i, color)}"
-                                                            class="p-3 hover:bg-{color}-200
-                                                            bg-{color}-100"></button>
-                                                    {/each}
-                                                </div>
-                                            {/if}
-                                        </div>
-                                    </div>
-                                    <textarea
-                                        style="height: {note.contentHeight ? `${note.contentHeight}px` : 'auto'}"
-                                        on:mousedown="{detectElementMouseEnlargement(index, i)}"
-                                        class="w-full h-full bg-transparent"
-                                        rows="5"
-                                        on:change="{noteContentEdit(index, i, 'content')}">
-                                        {note.content}
-                                    </textarea>
-                                </div>
-                            </li>
-                        {/each}
-                    </ul>
                 </div>
-            {/each}
-            <div class="m-3 bg-gray-300 w-16 self-stretch flex-no-shrink">
-                <button
-                    on:click="{addNoteColumn}"
-                    class="w-full h-full font-bold text-5xl text-grey">
-                    +
-                </button>
-            </div>
-        </section>
-    </div>
+            </section>
+        </div>
+    {/each}
 {:else}
     <PageLayout>
         <div class="flex items-center">
@@ -463,4 +557,13 @@
             </div>
         </div>
     </PageLayout>
+{/if}
+
+{#if showAddGoal}
+    <AddGoal
+        {handleGoalAdd}
+        toggleAddGoal="{toggleAddGoal()}"
+        {handleGoalRevision}
+        goalId="{reviseGoalId}"
+        goalName="{reviseGoalName}" />
 {/if}

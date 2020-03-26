@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -13,12 +14,38 @@ import (
 
 var db *sql.DB
 
-// Storyboard aka arena
+// Storyboard A story mapping board
 type Storyboard struct {
-	StoryboardID   string  `json:"id"`
-	OwnerID        string  `json:"ownerId"`
-	StoryboardName string  `json:"name"`
-	Users          []*User `json:"users"`
+	StoryboardID   string            `json:"id"`
+	OwnerID        string            `json:"ownerId"`
+	StoryboardName string            `json:"name"`
+	Users          []*User           `json:"users"`
+	Goals          []*StoryboardGoal `json:"goals"`
+}
+
+// StoryboardGoal A row in a story mapping board
+type StoryboardGoal struct {
+	GoalID    string              `json:"id"`
+	GoalName  string              `json:"name"`
+	Columns   []*StoryboardColumn `json:"columns"`
+	SortOrder int                 `json:"sortOrder"`
+}
+
+// StoryboardColumn A column in a storyboard goal
+type StoryboardColumn struct {
+	ColumnID   string             `json:"id"`
+	ColumnName string             `json:"name"`
+	Stories    []*StoryboardStory `json:"stories"`
+	SortOrder  int                `json:"sortOrder"`
+}
+
+// StoryboardStory A story in a storyboard goal column
+type StoryboardStory struct {
+	StoryID      string `json:"id"`
+	StoryName    string `json:"name"`
+	StoryContent string `json:"content"`
+	StoryColor   string `json:"color"`
+	SortOrder    int    `json:"sortOrder"`
 }
 
 // User aka user
@@ -27,7 +54,7 @@ type User struct {
 	UserName  string `json:"name"`
 	UserEmail string `json:"email"`
 	UserType  string `json:"type"`
-	Active    bool   `json:"active"`
+	Active    bool   `json:"active"` // this is actually for storyboard active status
 }
 
 // SetupDB runs db migrations, sets up a db connection pool
@@ -104,6 +131,7 @@ func GetStoryboard(StoryboardID string) (*Storyboard, error) {
 		OwnerID:        "",
 		StoryboardName: "",
 		Users:          make([]*User, 0),
+		Goals:          make([]*StoryboardGoal, 0),
 	}
 
 	// get storyboard
@@ -121,6 +149,7 @@ func GetStoryboard(StoryboardID string) (*Storyboard, error) {
 	}
 
 	b.Users = GetStoryboardUsers(StoryboardID)
+	b.Goals = GetStoryboardGoals(StoryboardID)
 
 	return b, nil
 }
@@ -278,7 +307,6 @@ func SetStoryboardOwner(StoryboardID string, userID string, OwnerID string) (*St
 		return nil, errors.New("Incorrect permissions")
 	}
 
-	// set storyboard VotingLocked
 	if _, err := db.Exec(
 		`call set_storyboard_owner($1, $2);`, StoryboardID, OwnerID); err != nil {
 		log.Println(err)
@@ -306,6 +334,263 @@ func DeleteStoryboard(StoryboardID string, userID string) error {
 	}
 
 	return nil
+}
+
+/*
+	Storyboard Goal
+*/
+
+// CreateStoryboardGoal adds a new goal to a Storyboard
+func CreateStoryboardGoal(StoryboardID string, userID string, GoalName string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call create_storyboard_goal($1, $2);`, StoryboardID, GoalName,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// ReviseGoalName updates the plan name by ID
+func ReviseGoalName(StoryboardID string, userID string, GoalID string, GoalName string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call update_storyboard_goal($1, $2);`,
+		GoalID,
+		GoalName,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// DeleteStoryboardGoal removes a goal from the current board by ID
+func DeleteStoryboardGoal(StoryboardID string, userID string, GoalID string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call delete_storyboard_goal($1);`, GoalID); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// GetStoryboardGoals retrieves goals for given storyboard from db
+func GetStoryboardGoals(StoryboardID string) []*StoryboardGoal {
+	var goals = make([]*StoryboardGoal, 0)
+
+	goalRows, goalsErr := db.Query(
+		`
+			SELECT
+				sg.id,
+				sg.sort_order,
+				sg.name,
+				COALESCE(json_agg(to_jsonb(t) - 'goal_id') FILTER (WHERE t.id IS NOT NULL), '[]') AS columns
+			FROM storyboard_goal sg
+			LEFT JOIN (
+				SELECT
+					sc.*,
+					COALESCE(
+						json_agg(ss ORDER BY ss.sort_order) FILTER (WHERE ss.id IS NOT NULL), '[]'
+					) AS stories
+				FROM storyboard_column sc
+				LEFT JOIN storyboard_story ss ON ss.column_id = sc.id
+				GROUP BY sc.id
+				ORDER BY sc.sort_order
+			) t ON t.goal_id = sg.id
+			WHERE sg.storyboard_id = $1
+			GROUP BY sg.id
+			ORDER BY sg.sort_order;
+		`,
+		StoryboardID,
+	)
+	if goalsErr == nil {
+		defer goalRows.Close()
+		for goalRows.Next() {
+			var columns string
+			var sg = &StoryboardGoal{
+				GoalID:    "",
+				GoalName:  "",
+				SortOrder: 0,
+				Columns:   make([]*StoryboardColumn, 0),
+			}
+			if err := goalRows.Scan(&sg.GoalID, &sg.SortOrder, &sg.GoalName, &columns); err != nil {
+				log.Println(err)
+			} else {
+				goalColumns := make([]*StoryboardColumn, 0)
+				jsonErr := json.Unmarshal([]byte(columns), &goalColumns)
+				if jsonErr != nil {
+					log.Println(jsonErr)
+				}
+				sg.Columns = goalColumns
+				goals = append(goals, sg)
+			}
+		}
+	}
+
+	return goals
+}
+
+/*
+	Storyboard Column
+*/
+
+// CreateStoryboardColumn adds a new column to a Storyboard
+func CreateStoryboardColumn(StoryboardID string, GoalID string, userID string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call create_storyboard_column($1, $2);`, StoryboardID, GoalID,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+/*
+	Storyboard Story
+*/
+
+// CreateStoryboardStory adds a new story to a Storyboard
+func CreateStoryboardStory(StoryboardID string, GoalID string, ColumnID string, userID string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call create_storyboard_story($1, $2, $3);`, StoryboardID, GoalID, ColumnID,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// ReviseStoryName updates the story name by ID
+func ReviseStoryName(StoryboardID string, userID string, StoryID string, StoryName string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call update_story_name($1, $2);`,
+		StoryID,
+		StoryName,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// ReviseStoryContent updates the story content by ID
+func ReviseStoryContent(StoryboardID string, userID string, StoryID string, StoryContent string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call update_story_content($1, $2);`,
+		StoryID,
+		StoryContent,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// ReviseStoryColor updates the story color by ID
+func ReviseStoryColor(StoryboardID string, userID string, StoryID string, StoryColor string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call update_story_color($1, $2);`,
+		StoryID,
+		StoryColor,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// MoveStoryboardStory moves the story by ID to Goal/Column by ID
+func MoveStoryboardStory(StoryboardID string, userID string, StoryID string, GoalID string, ColumnID string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call move_story($1, $2, $3);`,
+		StoryID,
+		GoalID,
+		ColumnID,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// DeleteStoryboardStory removes a story from the current board by ID
+func DeleteStoryboardStory(StoryboardID string, userID string, StoryID string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call delete_storyboard_story($1);`, StoryID); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
 }
 
 /*

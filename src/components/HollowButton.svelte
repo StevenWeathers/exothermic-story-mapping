@@ -5,11 +5,17 @@
     export let type = 'button'
     export let onClick = () => {}
     export let href = ''
+    export let btnSize = ''
+
+    $: btnSizeClass = btnSize === 'small' ? 'btn-hollow-small' : ''
 </script>
 
 <style>
     .btn-hollow {
         @apply leading-tight font-semibold bg-transparent py-2 px-3 border rounded;
+    }
+    .btn-hollow-small {
+        @apply py-1 px-2;
     }
     .btn-hollow.disabled {
         @apply opacity-50 cursor-not-allowed;
@@ -69,7 +75,7 @@
 
 {#if href === ''}
     <button
-        class="btn-hollow btn-hollow-{color}
+        class="btn-hollow {btnSizeClass} btn-hollow-{color}
         {disabled ? 'disabled' : ''}
         {additionalClasses}"
         on:click="{onClick}"
