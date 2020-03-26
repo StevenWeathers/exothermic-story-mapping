@@ -132,35 +132,6 @@
         )
     })
 
-    // catch and update textarea adjusted size in data
-    // const detectElementMouseEnlargement = (column, index) => ev => {
-    //     const element = ev.target
-    //     const size = { height: element.clientHeight }
-    //     let styleHeight = parseFloat(
-    //         getComputedStyle(element)['height'].replace('px', ''),
-    //     )
-
-    //     const mouseMoveListener = event => {
-    //         if (element.clientHeight != size.height) {
-    //             let style = getComputedStyle(element)
-    //             styleHeight = parseFloat(style['height'].replace('px', ''))
-
-    //             size.height = element.clientHeight
-    //         }
-    //     }
-
-    //     const mouseUpListener = event => {
-    //         window.removeEventListener('mousemove', mouseMoveListener)
-    //         window.removeEventListener('mouseup', mouseUpListener)
-    //         storysColumns[column].storys[index].contentHeight = styleHeight
-
-    //         sendChanges()
-    //     }
-
-    //     window.addEventListener('mousemove', mouseMoveListener)
-    //     window.addEventListener('mouseup', mouseUpListener)
-    // }
-
     const onSocketMessage = function(evt) {
         const parsedEvent = JSON.parse(evt.data)
 
@@ -456,10 +427,10 @@
                 </div>
             </div>
             <section
-                class="flex items-stretch"
+                class="flex items-stretch px-2"
                 style="overflow-x: scroll; min-height: 260px">
                 {#each goal.columns as goalColumn (goalColumn.id)}
-                    <div class="flex-no-shrink m-3" style="width: 280px">
+                    <div class="flex-no-shrink my-4 mx-2" style="width: 260px">
                         <button
                             on:click="{addStory(goal.id, goalColumn.id)}"
                             class="w-full font-bold text-xl bg-gray-300 p-1">
@@ -472,29 +443,24 @@
                             {#each goalColumn.stories as story (story.id)}
                                 <li
                                     class="max-w-xs shadow story-{story.color}
-                                    border mt-5 list-reset"
+                                    border my-4 list-reset"
                                     data-goalid="{goal.id}"
                                     data-columnid="{goalColumn.id}"
                                     data-storyid="{story.id}">
-                                    <div class="p-3">
-                                        <div class="mb-2 relative flex mb-4">
-                                            <div class="w-1/5">
-                                                <button
-                                                    class="float-left"
-                                                    on:click="{deleteStory(story.id)}">
-                                                    <TimesIcon
-                                                        color="{story.color}" />
-                                                </button>
-                                            </div>
-                                            <div class="w-3/5">
-                                                <input
-                                                    type="text"
-                                                    value="{story.name}"
-                                                    on:change="{storyUpdateName(story.id)}"
-                                                    class="inline font-bold
-                                                    text-xl bg-transparent" />
-                                            </div>
-                                            <div class="w-1/5 text-right">
+                                    <div class="p-2">
+                                        <div class="mb-2 relative flex">
+                                            <button
+                                                on:click="{deleteStory(story.id)}">
+                                                <TimesIcon
+                                                    color="{story.color}" />
+                                            </button>
+                                            <input
+                                                type="text"
+                                                value="{story.name}"
+                                                on:change="{storyUpdateName(story.id)}"
+                                                class="inline-block font-bold
+                                                text-l bg-transparent mx-2 w-full" />
+                                            <div class="inline-block align-middle text-right">
                                                 <button
                                                     on:click="{showChangeColor(story.id)}">
                                                     <DropperIcon
@@ -508,7 +474,7 @@
                                                         {#each cardColors as color}
                                                             <button
                                                                 on:click="{changeStoryColor(story.id, color)}"
-                                                                class="p-3
+                                                                class="p-4
                                                                 hover:bg-{color}-200
                                                                 bg-{color}-100"></button>
                                                         {/each}
@@ -516,10 +482,8 @@
                                                 {/if}
                                             </div>
                                         </div>
-                                        <!-- on:mousedown="{detectElementMouseEnlargement(story.id)}" -->
                                         <textarea
-                                            style="height: {story.contentHeight ? `${story.contentHeight}px` : 'auto'}"
-                                            class="w-full h-full bg-transparent"
+                                            class="w-full h-full bg-transparent resize-none"
                                             rows="4"
                                             on:change="{storyUpdateContent(story.id)}"
                                             value="{story.content}"></textarea>
