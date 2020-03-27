@@ -46,7 +46,7 @@
             <div class="w-full md:w-1/2 px-4">
                 <img
                     class="w-full"
-                    src=""
+                    src="https://user-images.githubusercontent.com/846933/77712629-b8933500-6faa-11ea-9b9f-b64a1f648f98.png"
                     alt="Preview of Exothermic, Agile Story Mapping UI
                     experience" />
             </div>
@@ -66,17 +66,7 @@
             </div>
             <div class="w-1/3">
                 <CheckIcon />
-            </div>
-            <div class="w-1/3">
-                <CheckIcon />
-            </div>
-        </div>
-        <div class="flex text-center mb-8">
-            <div class="w-1/3">
-                <CheckIcon />
-            </div>
-            <div class="w-1/3">
-                <CheckIcon />
+                Ability to add goals (rows), columns and stories with common data points to a storyboard.
             </div>
             <div class="w-1/3">
                 <CheckIcon />
