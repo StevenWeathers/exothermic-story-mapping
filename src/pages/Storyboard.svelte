@@ -427,10 +427,10 @@
                 </div>
             </div>
             <section
-                class="flex items-stretch px-2"
+                class="flex px-2"
                 style="overflow-x: scroll; min-height: 260px">
                 {#each goal.columns as goalColumn (goalColumn.id)}
-                    <div class="flex-no-shrink my-4 mx-2" style="width: 260px">
+                    <div class="flex-none my-4 mx-2" style="width: 260px">
                         <button
                             on:click="{addStory(goal.id, goalColumn.id)}"
                             class="w-full font-bold text-xl bg-gray-300 p-1">
@@ -493,7 +493,7 @@
                         </ul>
                     </div>
                 {/each}
-                <div class="m-3 bg-gray-300 w-16 self-stretch flex-no-shrink">
+                <div class="flex-none my-4 mx-2 bg-gray-300 w-16 flex-none">
                     <button
                         on:click="{addStoryColumn(goal.id)}"
                         class="w-full h-full font-bold text-xl text-grey">
