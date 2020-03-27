@@ -112,7 +112,7 @@ func CreateStoryboard(OwnerID string, StoryboardName string) (*Storyboard, error
 	}
 
 	e := db.QueryRow(
-		`INSERT INTO storyboard (owner_id, name) VALUES ($1, $2) RETURNING id`,
+		`SELECT * FROM create_storyboard($1, $2);`,
 		OwnerID,
 		StoryboardName,
 	).Scan(&b.StoryboardID)
@@ -158,10 +158,7 @@ func GetStoryboard(StoryboardID string) (*Storyboard, error) {
 func GetStoryboardsByUser(UserID string) ([]*Storyboard, error) {
 	var storyboards = make([]*Storyboard, 0)
 	storyboardRows, storyboardsErr := db.Query(`
-		SELECT b.id, b.name, b.owner_id
-		FROM storyboard b
-		LEFT JOIN storyboard_user bw ON b.id = bw.storyboard_id WHERE bw.user_id = $1
-		GROUP BY b.id ORDER BY b.created_date DESC
+		SELECT * FROM get_storyboards_by_user($1);
 	`, UserID)
 	if storyboardsErr != nil {
 		return nil, errors.New("Not found")
@@ -211,11 +208,7 @@ func GetStoryboardUser(StoryboardID string, UserID string) (*User, error) {
 	var w User
 
 	e := db.QueryRow(
-		`SELECT
-			w.id, w.name, coalesce(w.email, ''), w.type, coalesce(bw.active, FALSE)
-		FROM users w
-		LEFT JOIN storyboard_user bw ON bw.user_id = w.id AND bw.storyboard_id = $1
-		WHERE id = $2`,
+		`SELECT * FROM get_storyboard_user($1, $2);`,
 		StoryboardID,
 		UserID,
 	).Scan(
@@ -241,23 +234,16 @@ func GetStoryboardUser(StoryboardID string, UserID string) (*User, error) {
 func GetStoryboardUsers(StoryboardID string) []*User {
 	var users = make([]*User, 0)
 	rows, err := db.Query(
-		`SELECT
-			w.id, w.name, w.email, w.type, bw.active
-		FROM storyboard_user bw
-		LEFT JOIN users w ON bw.user_id = w.id
-		WHERE bw.storyboard_id = $1
-		ORDER BY w.name`,
+		`SELECT * FROM get_storyboard_users($1);`,
 		StoryboardID,
 	)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var w User
-			var userEmail sql.NullString
-			if err := rows.Scan(&w.UserID, &w.UserName, &userEmail, &w.UserType, &w.Active); err != nil {
+			if err := rows.Scan(&w.UserID, &w.UserName, &w.UserEmail, &w.UserType, &w.Active); err != nil {
 				log.Println(err)
 			} else {
-				w.UserEmail = userEmail.String
 				users = append(users, &w)
 			}
 		}
@@ -400,27 +386,7 @@ func GetStoryboardGoals(StoryboardID string) []*StoryboardGoal {
 	var goals = make([]*StoryboardGoal, 0)
 
 	goalRows, goalsErr := db.Query(
-		`
-			SELECT
-				sg.id,
-				sg.sort_order,
-				sg.name,
-				COALESCE(json_agg(to_jsonb(t) - 'goal_id' ORDER BY t.sort_order) FILTER (WHERE t.id IS NOT NULL), '[]') AS columns
-			FROM storyboard_goal sg
-			LEFT JOIN (
-				SELECT
-					sc.*,
-					COALESCE(
-						json_agg(ss ORDER BY ss.sort_order) FILTER (WHERE ss.id IS NOT NULL), '[]'
-					) AS stories
-				FROM storyboard_column sc
-				LEFT JOIN storyboard_story ss ON ss.column_id = sc.id
-				GROUP BY sc.id
-			) t ON t.goal_id = sg.id
-			WHERE sg.storyboard_id = $1
-			GROUP BY sg.id
-			ORDER BY sg.sort_order;
-		`,
+		`SELECT * FROM get_storyboard_goals($1);`,
 		StoryboardID,
 	)
 	if goalsErr == nil {
@@ -600,23 +566,20 @@ func DeleteStoryboardStory(StoryboardID string, userID string, StoryID string) (
 // GetUser gets a user from db by ID
 func GetUser(UserID string) (*User, error) {
 	var w User
-	var userEmail sql.NullString
 
 	e := db.QueryRow(
-		"SELECT id, name, email, type FROM users WHERE id = $1",
+		`SELECT * FROM get_user($1);`,
 		UserID,
 	).Scan(
 		&w.UserID,
 		&w.UserName,
-		&userEmail,
+		&w.UserEmail,
 		&w.UserType,
 	)
 	if e != nil {
 		log.Println(e)
 		return nil, errors.New("User Not found")
 	}
-
-	w.UserEmail = userEmail.String
 
 	return &w, nil
 }
@@ -627,7 +590,7 @@ func AuthUser(UserEmail string, UserPassword string) (*User, error) {
 	var passHash string
 
 	e := db.QueryRow(
-		`SELECT id, name, email, type, password FROM users WHERE email = $1`,
+		`SELECT * FROM get_user_auth_by_email($1)`,
 		UserEmail,
 	).Scan(
 		&w.UserID,

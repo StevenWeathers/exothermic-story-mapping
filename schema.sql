@@ -309,3 +309,116 @@ BEGIN
     COMMIT;
 END;
 $$;
+
+
+--
+-- Stored Functions
+--
+
+-- Create a Storyboard
+DROP FUNCTION IF EXISTS create_storyboard(UUID, VARCHAR);
+CREATE FUNCTION create_storyboard(ownerId UUID, storyboardName VARCHAR(256)) RETURNS UUID 
+AS $$ 
+DECLARE storyId UUID;
+BEGIN
+    INSERT INTO storyboard (owner_id, name) VALUES (ownerId, storyboardName) RETURNING id INTO storyId;
+
+    RETURN storyId;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get Storyboards by User ID
+DROP FUNCTION IF EXISTS get_storyboards_by_user(uuid);
+CREATE FUNCTION get_storyboards_by_user(userId UUID) RETURNS table (
+    id UUID, name VARCHAR(256), owner_id UUID
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT b.id, b.name, b.owner_id
+		FROM storyboard b
+		LEFT JOIN storyboard_user bw ON b.id = bw.storyboard_id WHERE bw.user_id = userId
+		GROUP BY b.id ORDER BY b.created_date DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get a Storyboards Goals --
+DROP FUNCTION IF EXISTS get_storyboard_goals(uuid);
+CREATE FUNCTION get_storyboard_goals(storyboardId UUID) RETURNS table (
+    id UUID, sort_order INTEGER, name VARCHAR(256), columns JSON
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+            sg.id,
+            sg.sort_order,
+            sg.name,
+            COALESCE(json_agg(to_jsonb(t) - 'goal_id' ORDER BY t.sort_order) FILTER (WHERE t.id IS NOT NULL), '[]') AS columns           
+        FROM storyboard_goal sg
+        LEFT JOIN (
+            SELECT
+                sc.*,
+                COALESCE(
+                    json_agg(ss ORDER BY ss.sort_order) FILTER (WHERE ss.id IS NOT NULL), '[]'
+                ) AS stories
+            FROM storyboard_column sc
+            LEFT JOIN storyboard_story ss ON ss.column_id = sc.id
+            GROUP BY sc.id
+        ) t ON t.goal_id = sg.id
+        WHERE sg.storyboard_id = storyboardId
+        GROUP BY sg.id
+        ORDER BY sg.sort_order;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get a User by ID
+DROP FUNCTION IF EXISTS get_user(UUID);
+CREATE FUNCTION get_user(userId UUID) RETURNS table (
+    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128)
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT u.id, u.name, coalesce(u.email, ''), u.type FROM users u WHERE u.id = userId;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get Storyboard Users
+DROP FUNCTION IF EXISTS get_storyboard_users(uuid);
+CREATE FUNCTION get_storyboard_users(storyboardId UUID) RETURNS table (
+    id UUID, name VARCHAR(256), email VARCHAR(320), type VARCHAR(128), active BOOL
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+			w.id, w.name, coalesce(w.email, ''), w.type, bw.active
+		FROM storyboard_user bw
+		LEFT JOIN users w ON bw.user_id = w.id
+		WHERE bw.storyboard_id = storyboardId
+		ORDER BY w.name;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get Storyboard User by id
+DROP FUNCTION IF EXISTS get_storyboard_user(uuid, uuid);
+CREATE FUNCTION get_storyboard_user(storyboardId UUID, userId UUID) RETURNS table (
+    id UUID, name VARCHAR(256), email VARCHAR(320), type VARCHAR(128), active BOOL
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+			w.id, w.name, coalesce(w.email, ''), w.type, coalesce(bw.active, FALSE)
+		FROM users w
+		LEFT JOIN storyboard_user bw ON bw.user_id = w.id AND bw.storyboard_id = storyboardId
+		WHERE w.id = userId;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get User Auth by Email
+DROP FUNCTION IF EXISTS get_user_auth_by_email(VARCHAR);
+CREATE FUNCTION get_user_auth_by_email(userEmail VARCHAR(320)) RETURNS table (
+    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), password TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.password FROM users u WHERE u.email = userEmail;
+END;
+$$ LANGUAGE plpgsql;
