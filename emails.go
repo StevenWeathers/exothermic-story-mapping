@@ -70,8 +70,8 @@ func generateEmailBody(Body hermes.Body) (emailBody string, generateErr error) {
 	hms := hermes.Hermes{
 		Product: hermes.Product{
 			Name:      "Exothermic",
-			Link:      "https://exothermic.dev/",
-			Logo:      "https://exothermic.dev/img/exothermic-logo.png",
+			Link:      "https://" + AppDomain + "/",
+			Logo:      "https://" + AppDomain + "/img/exothermic-logo.png",
 			Copyright: "Copyright © " + year + " Exothermic. All rights reserved.",
 		},
 	}
@@ -163,7 +163,7 @@ func sendEmail(UserName string, UserEmail string, Subject string, Body string) e
 }
 
 // SendWelcomeEmail sends the welcome email to new registered user
-func SendWelcomeEmail(UserName string, UserEmail string) error {
+func SendWelcomeEmail(UserName string, UserEmail string, VerifyID string) error {
 	emailBody, err := generateEmailBody(
 		hermes.Body{
 			Name: UserName,
@@ -171,6 +171,14 @@ func SendWelcomeEmail(UserName string, UserEmail string) error {
 				"Welcome to the Exothermic.",
 			},
 			Actions: []hermes.Action{
+				{
+					Instructions: "Please validate your email, the following link will expire in 24 hours.",
+					Button: hermes.Button{
+						Color: "#22BC66",
+						Text:  "Verify Account",
+						Link:  "https://" + AppDomain + "/verify-account/" + VerifyID,
+					},
+				},
 				{
 					Instructions: "Need help, or have questions? Visit our Github page",
 					Button: hermes.Button{
@@ -213,7 +221,7 @@ func SendForgotPasswordEmail(UserName string, UserEmail string, ResetID string) 
 					Instructions: "Reset your password now, the following link will expire within an hour of the original request.",
 					Button: hermes.Button{
 						Text: "Reset Password",
-						Link: "https://exothermic.dev/reset-password/" + ResetID,
+						Link: "https://" + AppDomain + "/reset-password/" + ResetID,
 					},
 				},
 				{
@@ -265,7 +273,7 @@ func SendPasswordResetEmail(UserName string, UserEmail string) error {
 		},
 	)
 	if err != nil {
-		log.Println("Error Generating Forgot Password Email HTML: ", err)
+		log.Println("Error Generating Reset Password Email HTML: ", err)
 		return err
 	}
 
@@ -276,7 +284,45 @@ func SendPasswordResetEmail(UserName string, UserEmail string) error {
 		emailBody,
 	)
 	if sendErr != nil {
-		log.Println("Error sending Forgot Password Email: ", sendErr)
+		log.Println("Error sending Reset Password Email: ", sendErr)
+		return sendErr
+	}
+
+	return nil
+}
+
+// SendPasswordUpdateEmail Sends an Update Password confirmation email to user
+func SendPasswordUpdateEmail(UserName string, UserEmail string) error {
+	emailBody, err := generateEmailBody(
+		hermes.Body{
+			Name: UserName,
+			Intros: []string{
+				"Your Exothermic password was succesfully updated.",
+			},
+			Actions: []hermes.Action{
+				{
+					Instructions: "Need help, or have questions? Visit our Github page",
+					Button: hermes.Button{
+						Text: "Github Repo",
+						Link: "https://github.com/StevenWeathers/exothermic-story-mapping/",
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		log.Println("Error Generating Update Password Email HTML: ", err)
+		return err
+	}
+
+	sendErr := sendEmail(
+		UserName,
+		UserEmail,
+		"Your Exothermic password was succesfully updated.",
+		emailBody,
+	)
+	if sendErr != nil {
+		log.Println("Error sending Update Password Email: ", sendErr)
 		return sendErr
 	}
 

@@ -100,6 +100,16 @@ func SetupDB() {
 		`call deactivate_all_users();`); err != nil {
 		log.Println(err)
 	}
+
+	// on server start if admin email is specified set that user to ADMIN type
+	if AdminEmail != "" {
+		if _, err := db.Exec(
+			`call promote_user_by_email($1);`,
+			AdminEmail,
+		); err != nil {
+			log.Println(err)
+		}
+	}
 }
 
 //CreateStoryboard adds a new storyboard to the db
@@ -624,28 +634,44 @@ func CreateUserGuest(UserName string) (*User, error) {
 }
 
 // CreateUserRegistered adds a new user registered to the db
-func CreateUserRegistered(UserName string, UserEmail string, UserPassword string) (*User, error) {
+func CreateUserRegistered(UserName string, UserEmail string, UserPassword string, ActiveUserID string) (NewUser *User, VerifyID string, RegisterErr error) {
 	hashedPassword, hashErr := HashAndSalt([]byte(UserPassword))
 	if hashErr != nil {
-		return nil, hashErr
+		return nil, "", hashErr
 	}
 
 	var UserID string
+	var verifyID string
 	UserType := "REGISTERED"
 
-	e := db.QueryRow(
-		`INSERT INTO users (name, email, password, type) VALUES ($1, $2, $3, $4) RETURNING id`,
-		UserName,
-		UserEmail,
-		hashedPassword,
-		UserType,
-	).Scan(&UserID)
-	if e != nil {
-		log.Println(e)
-		return nil, errors.New("a User with that email already exists")
+	if ActiveUserID != "" {
+		e := db.QueryRow(
+			`SELECT userId, verifyId FROM register_user($1, $2, $3, $4, $5);`,
+			ActiveUserID,
+			UserName,
+			UserEmail,
+			hashedPassword,
+			UserType,
+		).Scan(&UserID, &verifyID)
+		if e != nil {
+			log.Println(e)
+			return nil, "", errors.New("a user with that email already exists")
+		}
+	} else {
+		e := db.QueryRow(
+			`SELECT userId, verifyId FROM register_user($1, $2, $3, $4);`,
+			UserName,
+			UserEmail,
+			hashedPassword,
+			UserType,
+		).Scan(&UserID, &verifyID)
+		if e != nil {
+			log.Println(e)
+			return nil, "", errors.New("a user with that email already exists")
+		}
 	}
 
-	return &User{UserID: UserID, UserName: UserName, UserEmail: UserEmail, UserType: UserType}, nil
+	return &User{UserID: UserID, UserName: UserName, UserEmail: UserEmail, UserType: UserType}, verifyID, nil
 }
 
 // UpdateUserProfile attempts to update the users profile
@@ -668,24 +694,11 @@ func UserResetRequest(UserEmail string) (resetID string, userName string, resetE
 	var UserID sql.NullString
 	var UserName sql.NullString
 
-	warErr := db.QueryRow(`
-		SELECT w.id, w.name FROM users w WHERE w.email = $1;
+	e := db.QueryRow(`
+		SELECT resetId, userId, userName FROM insert_user_reset($1);
 		`,
 		UserEmail,
-	).Scan(&UserID, &UserName)
-	if warErr != nil {
-		log.Println("Unable to get user for reset email: ", warErr)
-		// we don't want to alert the user that the email isn't valid
-		return "", "", nil
-	}
-
-	e := db.QueryRow(`
-		INSERT INTO user_reset (user_id)
-		VALUES ($1)
-		RETURNING reset_id;
-		`,
-		UserID.String,
-	).Scan(&ResetID)
+	).Scan(&ResetID, &UserID, &UserName)
 	if e != nil {
 		log.Println("Unable to reset user: ", e)
 		// we don't want to alert the user that the email isn't valid
@@ -705,7 +718,7 @@ func UserResetPassword(ResetID string, UserPassword string) (userName string, us
 		return "", "", hashErr
 	}
 
-	warErr := db.QueryRow(`
+	userErr := db.QueryRow(`
 		SELECT
 			w.name, w.email
 		FROM user_reset wr
@@ -714,9 +727,9 @@ func UserResetPassword(ResetID string, UserPassword string) (userName string, us
 		`,
 		ResetID,
 	).Scan(&UserName, &UserEmail)
-	if warErr != nil {
-		log.Println("Unable to get user for password reset confirmation email: ", warErr)
-		return "", "", warErr
+	if userErr != nil {
+		log.Println("Unable to get user for password reset confirmation email: ", userErr)
+		return "", "", userErr
 	}
 
 	if _, err := db.Exec(
@@ -725,4 +738,119 @@ func UserResetPassword(ResetID string, UserPassword string) (userName string, us
 	}
 
 	return UserName.String, UserEmail.String, nil
+}
+
+// UserUpdatePassword attempts to update a users password
+func UserUpdatePassword(UserID string, UserPassword string) (userName string, userEmail string, resetErr error) {
+	var UserName sql.NullString
+	var UserEmail sql.NullString
+
+	userErr := db.QueryRow(`
+		SELECT
+			w.name, w.email
+		FROM users w
+		WHERE w.id = $1;
+		`,
+		UserID,
+	).Scan(&UserName, &UserEmail)
+	if userErr != nil {
+		log.Println("Unable to get user for password update: ", userErr)
+		return "", "", userErr
+	}
+
+	hashedPassword, hashErr := HashAndSalt([]byte(UserPassword))
+	if hashErr != nil {
+		return "", "", hashErr
+	}
+
+	if _, err := db.Exec(
+		`call update_user_password($1, $2)`, UserID, hashedPassword); err != nil {
+		return "", "", err
+	}
+
+	return UserName.String, UserEmail.String, nil
+}
+
+// VerifyUserAccount attempts to verify a users account email
+func VerifyUserAccount(VerifyID string) error {
+	if _, err := db.Exec(
+		`call verify_user_account($1)`, VerifyID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*
+ Admin
+*/
+
+// ConfirmAdmin confirms whether the user is infact a ADMIN
+func ConfirmAdmin(AdminID string) error {
+	var userType string
+	e := db.QueryRow("SELECT coalesce(type, '') FROM users WHERE id = $1;", AdminID).Scan(&userType)
+	if e != nil {
+		log.Println(e)
+		return errors.New("could not find users type")
+	}
+
+	if userType != "ADMIN" {
+		return errors.New(("not admin"))
+	}
+
+	return nil
+}
+
+// ApplicationStats includes user, storyboard counts
+type ApplicationStats struct {
+	RegisteredCount   int `json:"registeredUserCount"`
+	UnregisteredCount int `json:"unregisteredUserCount"`
+	StoryboardCount   int `json:"storyboardCount"`
+}
+
+// GetAppStats gets counts of users (registered and unregistered), and storyboards
+func GetAppStats(AdminID string) (*ApplicationStats, error) {
+	var Appstats ApplicationStats
+	err := ConfirmAdmin(AdminID)
+	if err != nil {
+		log.Println("User isn't admin")
+		return nil, errors.New("incorrect permissions")
+	}
+
+	statsErr := db.QueryRow(`
+		SELECT
+			unregistered_user_count,
+			registered_user_count,
+			storyboard_count
+		FROM get_app_stats();
+		`,
+	).Scan(
+		&Appstats.UnregisteredCount,
+		&Appstats.RegisteredCount,
+		&Appstats.StoryboardCount,
+	)
+	if statsErr != nil {
+		log.Println("Unable to get application stats: ", statsErr)
+		return nil, statsErr
+	}
+
+	return &Appstats, nil
+}
+
+// PromoteUser promotes a user to ADMIN type
+func PromoteUser(AdminID string, UserID string) error {
+	err := ConfirmAdmin(AdminID)
+	if err != nil {
+		return errors.New("incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call promote_user($1);`,
+		UserID,
+	); err != nil {
+		log.Println(err)
+		return errors.New("error attempting to promote user to ADMIN")
+	}
+
+	return nil
 }

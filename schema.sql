@@ -73,9 +73,17 @@ CREATE TABLE IF NOT EXISTS user_reset (
     expire_date TIMESTAMP DEFAULT NOW() + INTERVAL '1 hour'
 );
 
+CREATE TABLE IF NOT EXISTS user_verify (
+    verify_id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES users NOT NULL,
+    created_date TIMESTAMP DEFAULT NOW(),
+    expire_date TIMESTAMP DEFAULT NOW() + INTERVAL '24 hour'
+);
+
 --
 -- Table Alterations
 --
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOL DEFAULT false;
 
 --
 -- Stored Procedures
@@ -303,13 +311,67 @@ BEGIN
         RAISE 'Valid Reset ID not found';
     END IF;
 
-    UPDATE users SET password = userPassword WHERE id = matchedUserId;
+    UPDATE users SET password = userPassword, last_active = NOW() WHERE id = matchedUserId;
     DELETE FROM user_reset WHERE reset_id = resetId;
 
     COMMIT;
 END;
 $$;
 
+-- Update User Password --
+CREATE OR REPLACE PROCEDURE update_user_password(userId UUID, userPassword TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE users SET password = userPassword, last_active = NOW() WHERE id = userId;
+
+    COMMIT;
+END;
+$$;
+
+-- Verify a user account email
+CREATE OR REPLACE PROCEDURE verify_user_account(verifyId UUID)
+LANGUAGE plpgsql AS $$
+DECLARE matchedUserId UUID;
+BEGIN
+	matchedUserId := (
+        SELECT usr.id
+        FROM user_verify uv
+        LEFT JOIN users usr ON usr.id = uv.user_id
+        WHERE uv.verify_id = verifyId AND NOW() < uv.expire_date
+    );
+
+    IF matchedUserId IS NULL THEN
+        -- attempt delete incase verify record expired
+        DELETE FROM user_verify WHERE verify_id = verifyId;
+        RAISE 'Valid Verify ID not found';
+    END IF;
+
+    UPDATE users SET verified = 'TRUE', last_active = NOW() WHERE id = matchedUserId;
+    DELETE FROM user_verify WHERE verify_id = verifyId;
+
+    COMMIT;
+END;
+$$;
+
+-- Promote User to ADMIN by ID --
+CREATE OR REPLACE PROCEDURE promote_user(userId UUID)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE users SET type = 'ADMIN' WHERE id = userId;
+
+    COMMIT;
+END;
+$$;
+
+-- Promote User to ADMIN by Email --
+CREATE OR REPLACE PROCEDURE promote_user_by_email(userEmail VARCHAR(320))
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE users SET type = 'ADMIN' WHERE email = userEmail;
+
+    COMMIT;
+END;
+$$;
 
 --
 -- Stored Functions
@@ -420,5 +482,81 @@ CREATE FUNCTION get_user_auth_by_email(userEmail VARCHAR(320)) RETURNS table (
 BEGIN
     RETURN QUERY
         SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.password FROM users u WHERE u.email = userEmail;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get Application Stats e.g. total user and storyboard counts
+DROP FUNCTION IF EXISTS get_app_stats();
+CREATE FUNCTION get_app_stats(
+    OUT unregistered_user_count INTEGER,
+    OUT registered_user_count INTEGER,
+    OUT storyboard_count INTEGER
+) AS $$
+BEGIN
+    SELECT COUNT(*) INTO unregistered_user_count FROM users WHERE email IS NULL;
+    SELECT COUNT(*) INTO registered_user_count FROM users WHERE email IS NOT NULL;
+    SELECT COUNT(*) INTO storyboard_count FROM storyboard;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insert a new user password reset
+DROP FUNCTION IF EXISTS insert_user_reset(VARCHAR);
+CREATE FUNCTION insert_user_reset(
+    IN userEmail VARCHAR(320),
+    OUT resetId UUID,
+    OUT userId UUID,
+    OUT userName VARCHAR(64)
+)
+AS $$ 
+BEGIN
+    SELECT id, name INTO userId, userName FROM users WHERE email = userEmail;
+    INSERT INTO user_reset (user_id) VALUES (userId) RETURNING reset_id INTO resetId;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Register a new user
+DROP FUNCTION IF EXISTS register_user(VARCHAR, VARCHAR, TEXT, VARCHAR);
+CREATE FUNCTION register_user(
+    IN userName VARCHAR(64),
+    IN userEmail VARCHAR(320),
+    IN hashedPassword TEXT,
+    IN userType VARCHAR(128),
+    OUT userId UUID,
+    OUT verifyId UUID
+)
+AS $$
+BEGIN
+    INSERT INTO users (name, email, password, type)
+    VALUES (userName, userEmail, hashedPassword, userType)
+    RETURNING id INTO userId;
+
+    INSERT INTO user_verify (user_id) VALUES (userId) RETURNING verify_id INTO verifyId;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Register a new user from existing GUEST
+DROP FUNCTION IF EXISTS register_existing_user(UUID, VARCHAR, VARCHAR, TEXT, VARCHAR);
+CREATE FUNCTION register_existing_user(
+    IN activeUserId UUID,
+    IN userName VARCHAR(64),
+    IN userEmail VARCHAR(320),
+    IN hashedPassword TEXT,
+    IN userType VARCHAR(128),
+    OUT userId UUID,
+    OUT verifyId UUID
+)
+AS $$
+BEGIN
+    UPDATE users
+    SET
+         name = userName,
+         email = userEmail,
+         password = hashedPassword,
+         type = userType,
+         last_active = NOW()
+    WHERE id = activeUserId
+    RETURNING id INTO userId;
+
+    INSERT INTO user_verify (user_id) VALUES (userId) RETURNING verify_id INTO verifyId;
 END;
 $$ LANGUAGE plpgsql;

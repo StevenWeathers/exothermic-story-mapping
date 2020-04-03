@@ -66,7 +66,8 @@
             </div>
             <div class="w-1/3">
                 <CheckIcon />
-                Ability to add goals (rows), columns and stories with common data points to a storyboard.
+                Ability to add goals (rows), columns and stories with common
+                data points to a storyboard.
             </div>
             <div class="w-1/3">
                 <CheckIcon />

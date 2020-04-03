@@ -141,6 +141,8 @@ func EnlistUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ActiveUserID, _ := ValidateUserCookie(w, r)
+
 	UserName, UserEmail, UserPassword, accountErr := ValidateUserAccount(
 		keyVal["userName"],
 		keyVal["userEmail"],
@@ -153,7 +155,7 @@ func EnlistUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser, err := CreateUserRegistered(UserName, UserEmail, UserPassword)
+	newUser, VerifyID, err := CreateUserRegistered(UserName, UserEmail, UserPassword, ActiveUserID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -178,7 +180,7 @@ func EnlistUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	SendWelcomeEmail(UserName, UserEmail)
+	SendWelcomeEmail(UserName, UserEmail, VerifyID)
 
 	RespondWithJSON(w, http.StatusOK, newUser)
 }
@@ -276,6 +278,40 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// UpdatePasswordHandler attempts to update a users password
+func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body) // check for errors
+	keyVal := make(map[string]string)
+	json.Unmarshal(body, &keyVal) // check for errors
+
+	userID, cookieErr := ValidateUserCookie(w, r)
+	if cookieErr != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	UserPassword, passwordErr := ValidateUserPassword(
+		keyVal["userPassword1"],
+		keyVal["userPassword2"],
+	)
+
+	if passwordErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	UserName, UserEmail, updateErr := UserUpdatePassword(userID, UserPassword)
+	if updateErr != nil {
+		log.Println("error attempting to update user password : " + updateErr.Error() + "\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	SendPasswordUpdateEmail(UserName, UserEmail)
+
+	return
+}
+
 // UserProfileHandler returns the users profile if it matches their session
 func UserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -315,6 +351,42 @@ func UserUpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	updateErr := UpdateUserProfile(UserID, UserName)
 	if updateErr != nil {
 		log.Println("error attempting to update user profile : " + updateErr.Error() + "\n")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	return
+}
+
+// GetAppStatsHandler gets the applications stats
+func GetAppStatsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, cookieErr := ValidateUserCookie(w, r)
+	if cookieErr != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	AppStats, err := GetAppStats(userID)
+
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	RespondWithJSON(w, http.StatusOK, AppStats)
+}
+
+// VerifyAccountHandler attempts to verify a users account
+func VerifyAccountHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body) // check for errors
+
+	keyVal := make(map[string]string)
+	json.Unmarshal(body, &keyVal) // check for errors
+	VerifyID := keyVal["verifyId"]
+
+	verifyErr := VerifyUserAccount(VerifyID)
+	if verifyErr != nil {
+		log.Println("error attempting to verify user account : " + verifyErr.Error() + "\n")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

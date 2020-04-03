@@ -12,6 +12,8 @@
     import Login from './pages/Login.svelte'
     import ResetPassword from './pages/ResetPassword.svelte'
     import UserProfile from './pages/UserProfile.svelte'
+    import VerifyAccount from './pages/VerifyAccount.svelte'
+    import Admin from './pages/Admin.svelte'
     import { user } from './stores.js'
 
     const footerLinkClasses =
@@ -55,6 +57,12 @@
                 params,
             }
         })
+        .on('/verify-account/:verifyId', params => {
+            currentPage = {
+                route: VerifyAccount,
+                params,
+            }
+        })
         .on('/user-profile', params => {
             currentPage = {
                 route: UserProfile,
@@ -71,6 +79,12 @@
             currentPage = {
                 route: Storyboard,
                 params,
+            }
+        })
+        .on('/admin', () => {
+            currentPage = {
+                route: Admin,
+                params: {},
             }
         })
         .listen()
@@ -153,6 +167,14 @@
                 </HollowButton>
                 <HollowButton href="/login">Login</HollowButton>
             {:else}
+                {#if activeUser.type === 'ADMIN'}
+                    <HollowButton
+                        color="purple"
+                        href="/admin"
+                        additionalClasses="mr-2">
+                        Admin
+                    </HollowButton>
+                {/if}
                 <HollowButton color="red" onClick="{logoutUser}">
                     Logout
                 </HollowButton>

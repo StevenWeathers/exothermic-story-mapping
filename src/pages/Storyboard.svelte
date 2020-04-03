@@ -459,8 +459,11 @@
                                                 value="{story.name}"
                                                 on:change="{storyUpdateName(story.id)}"
                                                 class="inline-block font-bold
-                                                text-l bg-transparent mx-2 w-full" />
-                                            <div class="inline-block align-middle text-right">
+                                                text-l bg-transparent mx-2
+                                                w-full" />
+                                            <div
+                                                class="inline-block align-middle
+                                                text-right">
                                                 <button
                                                     on:click="{showChangeColor(story.id)}">
                                                     <DropperIcon
@@ -483,7 +486,8 @@
                                             </div>
                                         </div>
                                         <textarea
-                                            class="w-full h-full bg-transparent resize-none"
+                                            class="w-full h-full bg-transparent
+                                            resize-none"
                                             rows="4"
                                             on:change="{storyUpdateContent(story.id)}"
                                             value="{story.content}"></textarea>

@@ -7,12 +7,6 @@
     export let notifications
     export let resetId
 
-    const nameMin = 1
-    const nameMax = 64
-    const passMin = 6
-    const passMax = 72
-    const emailMax = 320
-
     let userPassword1 = ''
     let userPassword2 = ''
 
@@ -23,19 +17,13 @@
             userPassword1,
             userPassword2,
         }
+        const validPasswords = validatePasswords(userPassword1, userPassword2)
 
         let noFormErrors = true
 
-        if (userPassword1.length < passMin || userPassword1.length > passMax) {
+        if (!validPasswords.valid) {
             noFormErrors = false
-            notifications.danger(
-                `Password must be between ${passMin} and ${passMax} characters.`,
-            )
-        }
-
-        if (userPassword1 !== userPassword2) {
-            noFormErrors = false
-            notifications.danger(`Password and Confirm Password do not match.`)
+            notifications.danger(validPasswords.error, 1500)
         }
 
         if (noFormErrors) {

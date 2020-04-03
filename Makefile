@@ -29,6 +29,7 @@ clean:
 	rm -f $(BINARY_WINDOWS)
 	rm -f *-packr.go
 	rm -rf dist
+	rm -rf release
 	rm -rf packrd
 
 format:
@@ -60,11 +61,14 @@ dev-go:
 run:
 	SMTP_SECURE="false" DB_HOST="localhost" APP_DOMAIN=".127.0.0.1" COOKIE_SECURE="false" ./$(BINARY_NAME)
 
-# release:
-# 	$(GORELEASER)
+release:
+	$(GORELEASER)
 
-# release-dry:
-# 	$(GORELEASER) --skip-publish
+release-dry:
+	$(GORELEASER) --skip-publish
+
+release-snapshot:
+	$(GORELEASER) --snapshot
 
 build-next-image:
 	docker build ./ -t $(NEXT_DOCKER_TAG)
