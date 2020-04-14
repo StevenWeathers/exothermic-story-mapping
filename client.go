@@ -136,6 +136,14 @@ func (s subscription) readPump() {
 			}
 			updatedGoals, _ := json.Marshal(goals)
 			msg = CreateSocketEvent("column_added", string(updatedGoals), "")
+		case "delete_column":
+			goals, err := DeleteStoryboardColumn(storyboardID, userID, keyVal["value"])
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_deleted", string(updatedGoals), "")
 		case "add_story":
 			goalObj := make(map[string]string)
 			json.Unmarshal([]byte(keyVal["value"]), &goalObj)

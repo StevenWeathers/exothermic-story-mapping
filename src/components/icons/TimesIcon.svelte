@@ -1,11 +1,10 @@
 <script>
-    export let color = 'black'
     export let width = 16
     export let height = 16
 </script>
 
 <svg
-    class="fill-current text-{color}-lighter hover:text-{color}-dark"
+    class="fill-current"
     {width}
     {height}
     viewBox="0 0 1792 1792"

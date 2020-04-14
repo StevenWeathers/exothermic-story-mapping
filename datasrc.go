@@ -569,6 +569,23 @@ func DeleteStoryboardStory(StoryboardID string, userID string, StoryID string) (
 	return goals, nil
 }
 
+// DeleteStoryboardColumn removes a column from the current board by ID
+func DeleteStoryboardColumn(StoryboardID string, userID string, ColumnID string) ([]*StoryboardGoal, error) {
+	err := ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := db.Exec(
+		`call delete_storyboard_column($1);`, ColumnID); err != nil {
+		log.Println(err)
+	}
+
+	goals := GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
 /*
 	User
 */

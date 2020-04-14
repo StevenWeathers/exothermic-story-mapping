@@ -11,6 +11,7 @@
     import UsersIcon from '../components/icons/UsersIcon.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import TimesIcon from '../components/icons/TimesIcon.svelte'
+    import TrashIcon from '../components/icons/TrashIcon.svelte'
     import DropperIcon from '../components/icons/DropperIcon.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
 
@@ -75,6 +76,13 @@
             JSON.stringify({
                 goalId,
             }),
+        )
+    }
+
+    const deleteColumn = (columnId) => () => {
+        sendSocketEvent(
+            'delete_column',
+            columnId,
         )
     }
 
@@ -411,9 +419,16 @@
                 <div class="w-1/4 text-right">
                     {#if storyboard.ownerId === $user.id}
                         <HollowButton
+                            color="green"
+                            onClick="{addStoryColumn(goal.id)}"
+                            btnSize="small">
+                            Add Column
+                        </HollowButton>
+                        <HollowButton
                             color="orange"
                             onClick="{toggleAddGoal(goal.id)}"
-                            btnSize="small">
+                            btnSize="small"
+                            additionalClasses="ml-2">
                             Edit
                         </HollowButton>
                         <HollowButton
@@ -431,11 +446,18 @@
                 style="overflow-x: scroll; min-height: 260px">
                 {#each goal.columns as goalColumn (goalColumn.id)}
                     <div class="flex-none my-4 mx-2" style="width: 260px">
-                        <button
-                            on:click="{addStory(goal.id, goalColumn.id)}"
-                            class="w-full font-bold text-xl bg-gray-300 p-1">
-                            +
-                        </button>
+                        <div class="flex">
+                            <button
+                                on:click="{addStory(goal.id, goalColumn.id)}"
+                                class="flex-grow font-bold text-xl bg-gray-300 py-1 px-2 mr-1">
+                                +
+                            </button>
+                            <button
+                                on:click="{deleteColumn(goalColumn.id)}"
+                                class="flex-none font-bold text-xl bg-gray-300 py-1 px-2">
+                                <TrashIcon />
+                            </button>
+                        </div>
                         <ul
                             class="drop-column list-reset w-full min-h-full"
                             data-goalid="{goal.id}"
@@ -497,13 +519,6 @@
                         </ul>
                     </div>
                 {/each}
-                <div class="flex-none my-4 mx-2 bg-gray-300 w-16 flex-none">
-                    <button
-                        on:click="{addStoryColumn(goal.id)}"
-                        class="w-full h-full font-bold text-xl text-grey">
-                        +
-                    </button>
-                </div>
             </section>
         </div>
     {/each}
