@@ -277,17 +277,44 @@ func (s *subscription) writePump() {
 	}
 }
 
-// ClearUserCookies wipes the frontend and backend cookies
+// createUserCookie creates the users cookie
+func (s *server) createUserCookie(w http.ResponseWriter, isRegistered bool, UserID string) {
+	var cookiedays = 365 // 356 days
+	if isRegistered == true {
+		cookiedays = 30 // 30 days
+	}
+
+	encoded, err := s.cookie.Encode(s.config.SecureCookieName, UserID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+
+	}
+
+	cookie := &http.Cookie{
+		Name:     s.config.SecureCookieName,
+		Value:    encoded,
+		Path:     "/",
+		HttpOnly: true,
+		Domain:   s.config.AppDomain,
+		MaxAge:   86400 * cookiedays,
+		Secure:   s.config.SecureCookieFlag,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, cookie)
+}
+
+// clearUserCookies wipes the frontend and backend cookies
 // used in the event of bad cookie reads
-func ClearUserCookies(w http.ResponseWriter) {
+func (s *server) clearUserCookies(w http.ResponseWriter) {
 	feCookie := &http.Cookie{
-		Name:   "user",
+		Name:   s.config.FrontendCookieName,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
 	}
 	beCookie := &http.Cookie{
-		Name:     SecureCookieName,
+		Name:     s.config.SecureCookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
@@ -298,22 +325,22 @@ func ClearUserCookies(w http.ResponseWriter) {
 	http.SetCookie(w, beCookie)
 }
 
-// ValidateUserCookie returns the userID from secure cookies or errors if failures getting it
-func ValidateUserCookie(w http.ResponseWriter, r *http.Request) (string, error) {
+// validateUserCookie returns the userID from secure cookies or errors if failures getting it
+func (s *server) validateUserCookie(w http.ResponseWriter, r *http.Request) (string, error) {
 	var userID string
 
-	if cookie, err := r.Cookie(SecureCookieName); err == nil {
+	if cookie, err := r.Cookie(s.config.SecureCookieName); err == nil {
 		var value string
-		if err = Sc.Decode(SecureCookieName, cookie.Value, &value); err == nil {
+		if err = s.cookie.Decode(s.config.SecureCookieName, cookie.Value, &value); err == nil {
 			userID = value
 		} else {
 			log.Println("error in reading user cookie : " + err.Error() + "\n")
-			ClearUserCookies(w)
+			s.clearUserCookies(w)
 			return "", errors.New("invalid user cookies")
 		}
 	} else {
 		log.Println("error in reading user cookie : " + err.Error() + "\n")
-		ClearUserCookies(w)
+		s.clearUserCookies(w)
 		return "", errors.New("invalid user cookies")
 	}
 
@@ -321,56 +348,58 @@ func ValidateUserCookie(w http.ResponseWriter, r *http.Request) (string, error) 
 }
 
 // serveWs handles websocket requests from the peer.
-func serveWs(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	storyboardID := vars["id"]
+func (s *server) serveWs() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		storyboardID := vars["id"]
 
-	// make sure storyboard is legit
-	b, storyboardErr := GetStoryboard(storyboardID)
-	if storyboardErr != nil {
-		http.NotFound(w, r)
-		return
+		// make sure storyboard is legit
+		b, storyboardErr := GetStoryboard(storyboardID)
+		if storyboardErr != nil {
+			http.NotFound(w, r)
+			return
+		}
+		storyboard, _ := json.Marshal(b)
+
+		// make sure user cookies are valid
+		userID, cookieErr := s.validateUserCookie(w, r)
+		if cookieErr != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// make sure user exists
+		_, warErr := GetStoryboardUser(storyboardID, userID)
+
+		if warErr != nil {
+			log.Println("error finding user : " + warErr.Error() + "\n")
+			s.clearUserCookies(w)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// upgrade to WebSocket connection
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		c := &connection{send: make(chan []byte, 256), ws: ws}
+		ss := subscription{c, storyboardID, userID}
+		h.register <- ss
+
+		Users, _ := AddUserToStoryboard(ss.arena, userID)
+		updatedUsers, _ := json.Marshal(Users)
+
+		initEvent := CreateSocketEvent("init", string(storyboard), userID)
+		_ = c.write(websocket.TextMessage, initEvent)
+
+		joinedEvent := CreateSocketEvent("user_joined", string(updatedUsers), userID)
+		m := message{joinedEvent, ss.arena}
+		h.broadcast <- m
+
+		go ss.writePump()
+		ss.readPump()
 	}
-	storyboard, _ := json.Marshal(b)
-
-	// make sure user cookies are valid
-	userID, cookieErr := ValidateUserCookie(w, r)
-	if cookieErr != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	// make sure user exists
-	_, warErr := GetStoryboardUser(storyboardID, userID)
-
-	if warErr != nil {
-		log.Println("error finding user : " + warErr.Error() + "\n")
-		ClearUserCookies(w)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	// upgrade to WebSocket connection
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	c := &connection{send: make(chan []byte, 256), ws: ws}
-	s := subscription{c, storyboardID, userID}
-	h.register <- s
-
-	Users, _ := AddUserToStoryboard(s.arena, userID)
-	updatedUsers, _ := json.Marshal(Users)
-
-	initEvent := CreateSocketEvent("init", string(storyboard), userID)
-	_ = c.write(websocket.TextMessage, initEvent)
-
-	joinedEvent := CreateSocketEvent("user_joined", string(updatedUsers), userID)
-	m := message{joinedEvent, s.arena}
-	h.broadcast <- m
-
-	go s.writePump()
-	s.readPump()
 }

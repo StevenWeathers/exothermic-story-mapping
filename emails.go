@@ -23,55 +23,75 @@ func (s *smtpServer) Address() string {
 	return s.host + ":" + s.port
 }
 
-var smtpHost string
-var smtpPort string
-var smtpSecure bool
-var smtpIdentity string
-var smtpUser string
-var smtpPass string
-var smtpSender string
 var smtpServerConfig = smtpServer{}
 var tlsConfig = &tls.Config{}
 var smtpFrom = mail.Address{}
 var smtpAuth smtp.Auth
 
-// GetMailserverConfig reads environment variables and sets up mailserver configuration values
-func GetMailserverConfig() {
-	smtpHost = GetEnv("SMTP_HOST", "localhost")
-	smtpPort = GetEnv("SMTP_PORT", "25")
-	smtpSecure = GetBoolEnv("SMTP_SECURE", true)
-	smtpIdentity = GetEnv("SMTP_IDENTITY", "")
-	smtpUser = GetEnv("SMTP_USER", "")
-	smtpPass = GetEnv("SMTP_PASS", "")
-	smtpSender = GetEnv("SMTP_SENDER", "no-reply@exothermic.dev")
+// EmailConfig contains all the mailserver values
+type EmailConfig struct {
+	AppDomain    string
+	SenderName   string
+	smtpHost     string
+	smtpPort     string
+	smtpSecure   bool
+	smtpIdentity string
+	smtpUser     string
+	smtpPass     string
+	smtpSender   string
+}
+
+// Email contains all the methods to send application emails
+type Email struct {
+	config *EmailConfig
+}
+
+// NewEmail creates a new instance of Email
+func NewEmail(AppDomain string) *Email {
+	var m = &Email{
+		// read environment variables and sets up mailserver configuration values
+		config: &EmailConfig{
+			AppDomain:    AppDomain,
+			SenderName:   "Thunderdome",
+			smtpHost:     GetEnv("SMTP_HOST", "localhost"),
+			smtpPort:     GetEnv("SMTP_PORT", "25"),
+			smtpSecure:   GetBoolEnv("SMTP_SECURE", true),
+			smtpIdentity: GetEnv("SMTP_IDENTITY", ""),
+			smtpUser:     GetEnv("SMTP_USER", ""),
+			smtpPass:     GetEnv("SMTP_PASS", ""),
+			smtpSender:   GetEnv("SMTP_SENDER", "no-reply@exothermic.dev"),
+		},
+	}
 
 	// smtp server configuration.
-	smtpServerConfig = smtpServer{host: smtpHost, port: smtpPort}
+	smtpServerConfig = smtpServer{host: m.config.smtpHost, port: m.config.smtpPort}
 
 	// smtp sender info
 	smtpFrom = mail.Address{
-		Name:    "Exothermic",
-		Address: smtpSender,
+		Name:    m.config.SenderName,
+		Address: m.config.smtpSender,
 	}
 
 	// TLS config
 	tlsConfig = &tls.Config{
-		InsecureSkipVerify: !smtpSecure,
-		ServerName:         smtpHost,
+		InsecureSkipVerify: !m.config.smtpSecure,
+		ServerName:         m.config.smtpHost,
 	}
 
-	smtpAuth = smtp.PlainAuth(smtpIdentity, smtpUser, smtpPass, smtpHost)
+	smtpAuth = smtp.PlainAuth(m.config.smtpIdentity, m.config.smtpUser, m.config.smtpPass, m.config.smtpHost)
+
+	return m
 }
 
 // Generates an Email Body with hermes
-func generateEmailBody(Body hermes.Body) (emailBody string, generateErr error) {
+func (m *Email) generateBody(Body hermes.Body) (emailBody string, generateErr error) {
 	currentTime := time.Now()
 	year := strconv.Itoa(currentTime.Year())
 	hms := hermes.Hermes{
 		Product: hermes.Product{
 			Name:      "Exothermic",
-			Link:      "https://" + AppDomain + "/",
-			Logo:      "https://" + AppDomain + "/img/exothermic-logo.png",
+			Link:      "https://" + m.config.AppDomain + "/",
+			Logo:      "https://" + m.config.AppDomain + "/img/exothermic-logo.png",
 			Copyright: "Copyright © " + year + " Exothermic. All rights reserved.",
 		},
 	}
@@ -89,8 +109,8 @@ func generateEmailBody(Body hermes.Body) (emailBody string, generateErr error) {
 	return emailBody, nil
 }
 
-// utility function to send emails
-func sendEmail(UserName string, UserEmail string, Subject string, Body string) error {
+// Send - utility function to send emails
+func (m *Email) Send(UserName string, UserEmail string, Subject string, Body string) error {
 	to := mail.Address{
 		Name:    UserName,
 		Address: UserEmail,
@@ -120,7 +140,7 @@ func sendEmail(UserName string, UserEmail string, Subject string, Body string) e
 	c.StartTLS(tlsConfig)
 
 	// Auth
-	if smtpSecure == true {
+	if m.config.smtpSecure == true {
 		if err = c.Auth(smtpAuth); err != nil {
 			log.Println("Error authenticating SMTP: ", err)
 			return err
@@ -162,9 +182,9 @@ func sendEmail(UserName string, UserEmail string, Subject string, Body string) e
 	return nil
 }
 
-// SendWelcomeEmail sends the welcome email to new registered user
-func SendWelcomeEmail(UserName string, UserEmail string, VerifyID string) error {
-	emailBody, err := generateEmailBody(
+// SendWelcome sends the welcome email to new registered user
+func (m *Email) SendWelcome(UserName string, UserEmail string, VerifyID string) error {
+	emailBody, err := m.generateBody(
 		hermes.Body{
 			Name: UserName,
 			Intros: []string{
@@ -176,7 +196,7 @@ func SendWelcomeEmail(UserName string, UserEmail string, VerifyID string) error 
 					Button: hermes.Button{
 						Color: "#22BC66",
 						Text:  "Verify Account",
-						Link:  "https://" + AppDomain + "/verify-account/" + VerifyID,
+						Link:  "https://" + m.config.AppDomain + "/verify-account/" + VerifyID,
 					},
 				},
 				{
@@ -194,7 +214,7 @@ func SendWelcomeEmail(UserName string, UserEmail string, VerifyID string) error 
 		return err
 	}
 
-	sendErr := sendEmail(
+	sendErr := m.Send(
 		UserName,
 		UserEmail,
 		"Welcome to the Exothermic!",
@@ -208,9 +228,9 @@ func SendWelcomeEmail(UserName string, UserEmail string, VerifyID string) error 
 	return nil
 }
 
-// SendForgotPasswordEmail Sends a Forgot Password reset email to user
-func SendForgotPasswordEmail(UserName string, UserEmail string, ResetID string) error {
-	emailBody, err := generateEmailBody(
+// SendForgotPassword Sends a Forgot Password reset email to user
+func (m *Email) SendForgotPassword(UserName string, UserEmail string, ResetID string) error {
+	emailBody, err := m.generateBody(
 		hermes.Body{
 			Name: UserName,
 			Intros: []string{
@@ -221,7 +241,7 @@ func SendForgotPasswordEmail(UserName string, UserEmail string, ResetID string) 
 					Instructions: "Reset your password now, the following link will expire within an hour of the original request.",
 					Button: hermes.Button{
 						Text: "Reset Password",
-						Link: "https://" + AppDomain + "/reset-password/" + ResetID,
+						Link: "https://" + m.config.AppDomain + "/reset-password/" + ResetID,
 					},
 				},
 				{
@@ -239,7 +259,7 @@ func SendForgotPasswordEmail(UserName string, UserEmail string, ResetID string) 
 		return err
 	}
 
-	sendErr := sendEmail(
+	sendErr := m.Send(
 		UserName,
 		UserEmail,
 		"Forgot your Exothermic password?",
@@ -253,9 +273,9 @@ func SendForgotPasswordEmail(UserName string, UserEmail string, ResetID string) 
 	return nil
 }
 
-// SendPasswordResetEmail Sends a Reset Password confirmation email to user
-func SendPasswordResetEmail(UserName string, UserEmail string) error {
-	emailBody, err := generateEmailBody(
+// SendPasswordReset Sends a Reset Password confirmation email to user
+func (m *Email) SendPasswordReset(UserName string, UserEmail string) error {
+	emailBody, err := m.generateBody(
 		hermes.Body{
 			Name: UserName,
 			Intros: []string{
@@ -277,7 +297,7 @@ func SendPasswordResetEmail(UserName string, UserEmail string) error {
 		return err
 	}
 
-	sendErr := sendEmail(
+	sendErr := m.Send(
 		UserName,
 		UserEmail,
 		"Your Exothermic password was succesfully reset.",
@@ -291,9 +311,9 @@ func SendPasswordResetEmail(UserName string, UserEmail string) error {
 	return nil
 }
 
-// SendPasswordUpdateEmail Sends an Update Password confirmation email to user
-func SendPasswordUpdateEmail(UserName string, UserEmail string) error {
-	emailBody, err := generateEmailBody(
+// SendPasswordUpdate Sends an Update Password confirmation email to user
+func (m *Email) SendPasswordUpdate(UserName string, UserEmail string) error {
+	emailBody, err := m.generateBody(
 		hermes.Body{
 			Name: UserName,
 			Intros: []string{
@@ -315,7 +335,7 @@ func SendPasswordUpdateEmail(UserName string, UserEmail string) error {
 		return err
 	}
 
-	sendErr := sendEmail(
+	sendErr := m.Send(
 		UserName,
 		UserEmail,
 		"Your Exothermic password was succesfully updated.",

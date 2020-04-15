@@ -59,7 +59,7 @@ type User struct {
 
 // SetupDB runs db migrations, sets up a db connection pool
 // and sets previously active users to false during startup
-func SetupDB() {
+func SetupDB(AdminEmail string) {
 	var (
 		host     = GetEnv("DB_HOST", "db")
 		port     = GetIntEnv("DB_PORT", 5432)
@@ -812,7 +812,7 @@ func ConfirmAdmin(AdminID string) error {
 	}
 
 	if userType != "ADMIN" {
-		return errors.New(("not admin"))
+		return errors.New(("user is not an admin"))
 	}
 
 	return nil
@@ -826,13 +826,8 @@ type ApplicationStats struct {
 }
 
 // GetAppStats gets counts of users (registered and unregistered), and storyboards
-func GetAppStats(AdminID string) (*ApplicationStats, error) {
+func GetAppStats() (*ApplicationStats, error) {
 	var Appstats ApplicationStats
-	err := ConfirmAdmin(AdminID)
-	if err != nil {
-		log.Println("User isn't admin")
-		return nil, errors.New("incorrect permissions")
-	}
 
 	statsErr := db.QueryRow(`
 		SELECT
@@ -856,11 +851,6 @@ func GetAppStats(AdminID string) (*ApplicationStats, error) {
 
 // PromoteUser promotes a user to ADMIN type
 func PromoteUser(AdminID string, UserID string) error {
-	err := ConfirmAdmin(AdminID)
-	if err != nil {
-		return errors.New("incorrect permissions")
-	}
-
 	if _, err := db.Exec(
 		`call promote_user($1);`,
 		UserID,
