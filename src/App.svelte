@@ -15,6 +15,7 @@
     import VerifyAccount from './pages/VerifyAccount.svelte'
     import Admin from './pages/Admin.svelte'
     import { user } from './stores.js'
+    import eventTag from './eventTag.js'
 
     const footerLinkClasses =
         'no-underline text-orange-500 hover:text-orange-800'
@@ -98,13 +99,16 @@
             },
         })
             .then(function() {
-                user.delete()
-                router.route('/', true)
+                eventTag('logout', 'engagement', 'success', () => {
+                    user.delete()
+                    router.route('/', true)
+                })
             })
             .catch(function(error) {
                 notifications.danger(
                     'Error encountered attempting to logout user',
                 )
+                eventTag('logout', 'engagement', 'failure')
             })
     }
 
@@ -197,7 +201,8 @@
     this="{currentPage.route}"
     {...currentPage.params}
     {notifications}
-    {router} />
+    {router}
+    {eventTag} />
 
 <footer class="p-6 text-center">
     <a

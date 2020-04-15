@@ -10,8 +10,9 @@
 
     export let notifications
     export let router
+    export let eventTag
+
     let storyboards = []
-    let storyboardName = ''
 
     fetch('/api/storyboards', {
         method: 'GET',
@@ -31,39 +32,8 @@
         })
         .catch(function(error) {
             notifications.danger('Error finding your storyboards')
+            eventTag('fetch_storyboards', 'engagement', 'failure')
         })
-
-    function createStoryboard(e) {
-        e.preventDefault()
-        const data = {
-            storyboardName,
-            ownerId: $user.id,
-        }
-
-        fetch('/api/storyboard', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-            .then(function(response) {
-                if (!response.ok) {
-                    throw Error(response.statusText)
-                }
-                return response
-            })
-            .then(function(response) {
-                return response.json()
-            })
-            .then(function(storyboard) {
-                router.route(`/storyboard/${storyboard.id}`)
-            })
-            .catch(function(error) {
-                notifications.danger('Error encountered creating storyboard')
-            })
-    }
 
     onMount(() => {
         if (!$user.id) {
@@ -105,7 +75,7 @@
                 <h2 class="mb-4 text-2xl font-bold leading-tight">
                     Create a Storyboard
                 </h2>
-                <CreateStoryboard {notifications} {router} />
+                <CreateStoryboard {notifications} {router} {eventTag} />
             </div>
         </div>
     </div>

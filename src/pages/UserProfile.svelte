@@ -7,6 +7,7 @@
     import { validateName, validatePasswords } from '../validationUtils.js'
 
     export let router
+    export let eventTag
     export let notifications
 
     let userProfile = {}
@@ -17,6 +18,11 @@
 
     function toggleUpdatePassword() {
         updatePassword = !updatePassword
+        eventTag(
+            'update_password_toggle',
+            'engagement',
+            `update: ${updatePassword}`,
+        )
     }
 
     fetch(`/api/user/${$user.id}`, {
@@ -37,6 +43,7 @@
         })
         .catch(function(error) {
             notifications.danger('Error getting your profile')
+            eventTag('fetch_profile', 'engagement', 'failure')
         })
 
     function updateUserProfile(e) {
@@ -77,11 +84,13 @@
                     })
 
                     notifications.success('Profile updated.', 1500)
+                    eventTag('update_profile', 'engagement', 'success')
                 })
                 .catch(function(error) {
                     notifications.danger(
                         'Error encountered updating your profile',
                     )
+                    eventTag('update_profile', 'engagement', 'failure')
                 })
         }
     }
@@ -119,11 +128,13 @@
                 .then(function() {
                     notifications.success('Password updated.', 1500)
                     updatePassword = false
+                    eventTag('update_password', 'engagement', 'success')
                 })
                 .catch(function(error) {
                     notifications.danger(
                         'Error encountered attempting to update password',
                     )
+                    eventTag('update_password', 'engagement', 'failure')
                 })
         }
     }

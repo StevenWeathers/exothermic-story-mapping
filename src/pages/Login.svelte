@@ -4,6 +4,7 @@
     import { user } from '../stores.js'
 
     export let router
+    export let eventTag
     export let notifications
     export let storyboardId
 
@@ -49,17 +50,25 @@
                     type: newUser.type,
                 })
 
-                router.route(targetPage, true)
+                eventTag('login', 'engagement', 'success', () => {
+                    router.route(targetPage, true)
+                })
             })
             .catch(function(error) {
                 notifications.danger(
                     'Error encountered attempting to authenticate user',
                 )
+                eventTag('login', 'engagement', 'failure')
             })
     }
 
     function toggleForgotPassword() {
         forgotPassword = !forgotPassword
+        eventTag(
+            'forgot_password_toggle',
+            'engagement',
+            `forgot: ${forgotPassword}`,
+        )
     }
 
     function sendPasswordReset(e) {
@@ -90,11 +99,13 @@
                     2000,
                 )
                 forgotPassword = !forgotPassword
+                eventTag('forgot_password', 'engagement', 'success')
             })
             .catch(function(error) {
                 notifications.danger(
                     'Error encountered attempting to send password reset',
                 )
+                eventTag('forgot_password', 'engagement', 'failure')
             })
     }
 

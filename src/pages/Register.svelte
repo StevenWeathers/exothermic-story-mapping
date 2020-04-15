@@ -5,6 +5,7 @@
     import { validateName, validatePasswords } from '../validationUtils.js'
 
     export let router
+    export let eventTag
     export let notifications
     export let storyboardId
 
@@ -62,12 +63,15 @@
                         type: newUser.type,
                     })
 
-                    router.route(targetPage, true)
+                    eventTag('register_guest', 'engagement', 'success', () => {
+                        router.route(targetPage, true)
+                    })
                 })
                 .catch(function(error) {
                     notifications.danger(
                         'Error encountered registering user as guest',
                     )
+                    eventTag('register_guest', 'engagement', 'failure')
                 })
         }
     }
@@ -121,10 +125,18 @@
                         type: newUser.type,
                     })
 
-                    router.route(targetPage, true)
+                    eventTag(
+                        'register_account',
+                        'engagement',
+                        'success',
+                        () => {
+                            router.route(targetPage, true)
+                        },
+                    )
                 })
                 .catch(function(error) {
                     notifications.danger('Error encountered creating user')
+                    eventTag('register_account', 'engagement', 'failure')
                 })
         }
     }

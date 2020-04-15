@@ -7,6 +7,7 @@
     import { user } from '../stores.js'
 
     export let notifications
+    export let eventTag
     export let router
 
     let storyboardName = ''
@@ -29,10 +30,13 @@
                 return response.json()
             })
             .then(function(storyboard) {
-                router.route(`/storyboard/${storyboard.id}`)
+                eventTag('create_storyboard', 'engagement', 'success', () => {
+                    router.route(`/storyboard/${storyboard.id}`)
+                })
             })
             .catch(function(error) {
                 notifications.danger('Error encountered creating storyboard')
+                eventTag('create_storyboard', 'engagement', 'failure')
             })
     }
 

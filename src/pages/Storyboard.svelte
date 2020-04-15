@@ -41,6 +41,7 @@
     export let storyboardId
     export let notifications
     export let router
+    export let eventTag
 
     const hostname = window.location.origin
     const socketExtension = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -64,10 +65,12 @@
                 columnId,
             }),
         )
+        eventTag('story_add', 'storyboard', '')
     }
 
     const deleteStory = storyId => () => {
         sendSocketEvent('delete_story', storyId)
+        eventTag('story_delete', 'storyboard', '')
     }
 
     const addStoryColumn = goalId => () => {
@@ -77,13 +80,12 @@
                 goalId,
             }),
         )
+        eventTag('column_add', 'storyboard', '')
     }
 
-    const deleteColumn = (columnId) => () => {
-        sendSocketEvent(
-            'delete_column',
-            columnId,
-        )
+    const deleteColumn = columnId => () => {
+        sendSocketEvent('delete_column', columnId)
+        eventTag('column_delete', 'storyboard', '')
     }
 
     const showChangeColor = id => () => (changeColor = id)
@@ -97,6 +99,7 @@
             }),
         )
         changeColor = ''
+        eventTag('story_edit_color', 'storyboard', color)
     }
 
     const storyUpdateName = storyId => evt => {
@@ -108,6 +111,7 @@
                 name,
             }),
         )
+        eventTag('story_edit_name', 'storyboard', '')
     }
 
     const storyUpdateContent = storyId => evt => {
@@ -119,6 +123,7 @@
                 content,
             }),
         )
+        eventTag('story_edit_content', 'storyboard', '')
     }
 
     drake.on('drop', function(el, target, source, sibling) {
@@ -138,6 +143,7 @@
                 placeBefore,
             }),
         )
+        eventTag('story_move', 'storyboard', '')
     })
 
     const onSocketMessage = function(evt) {
@@ -146,6 +152,7 @@
         switch (parsedEvent.type) {
             case 'init':
                 storyboard = JSON.parse(parsedEvent.value)
+                eventTag('join', 'storyboard', '')
                 break
             case 'user_joined':
                 storyboard.users = JSON.parse(parsedEvent.value)
@@ -209,22 +216,32 @@
             onmessage: onSocketMessage,
             onerror: () => {
                 socketError = true
+                eventTag('storyboard_error', 'storyboard', 'Socket Error')
             },
             onclose: () => {
                 socketReconnecting = true
+                eventTag('storyboard_error', 'storyboard', 'Soecket Close')
             },
             onopen: () => {
                 socketError = false
                 socketReconnecting = false
+                eventTag('storyboard_error', 'storyboard', 'Soecket Open')
             },
             onmaximum: () => {
                 socketReconnecting = false
+                eventTag(
+                    'storyboard_error',
+                    'storyboard',
+                    'Socket Reconnect Max Reached',
+                )
             },
         },
     )
 
     onDestroy(() => {
-        ws.close()
+        eventTag('leave', 'storyboard', '', () => {
+            ws.close()
+        })
     })
 
     const sendSocketEvent = (type, value) => {
@@ -237,11 +254,14 @@
     }
 
     function concedeStoryboard() {
-        sendSocketEvent('concede_storyboard', '')
+        eventTag('concede_storyboard', 'storyboard', '', () => {
+            sendSocketEvent('concede_storyboard', '')
+        })
     }
 
     function toggleUsersPanel() {
         showUsers = !showUsers
+        eventTag('show_users', 'storyboard', `show: ${showUsers}`)
     }
 
     let showAddGoal = false
@@ -258,18 +278,22 @@
             reviseGoalName = ''
         }
         showAddGoal = !showAddGoal
+        eventTag('show_goal_add', 'storyboard', `show: ${showAddGoal}`)
     }
 
     const handleGoalAdd = goalName => {
         sendSocketEvent('add_goal', goalName)
+        eventTag('goal_add', 'storyboard', '')
     }
 
     const handleGoalRevision = updatedGoal => {
         sendSocketEvent('revise_goal', JSON.stringify(updatedGoal))
+        eventTag('goal_edit_name', 'storyboard', '')
     }
 
     const handleGoalDeletion = goalId => () => {
         sendSocketEvent('delete_goal', goalId)
+        eventTag('goal_delete', 'storyboard', '')
     }
 
     onMount(() => {
@@ -449,12 +473,14 @@
                         <div class="flex">
                             <button
                                 on:click="{addStory(goal.id, goalColumn.id)}"
-                                class="flex-grow font-bold text-xl bg-gray-300 py-1 px-2 mr-1">
+                                class="flex-grow font-bold text-xl bg-gray-300
+                                py-1 px-2 mr-1">
                                 +
                             </button>
                             <button
                                 on:click="{deleteColumn(goalColumn.id)}"
-                                class="flex-none font-bold text-xl bg-gray-300 py-1 px-2">
+                                class="flex-none font-bold text-xl bg-gray-300
+                                py-1 px-2">
                                 <TrashIcon />
                             </button>
                         </div>
