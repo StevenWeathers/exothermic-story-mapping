@@ -216,21 +216,28 @@
             onmessage: onSocketMessage,
             onerror: () => {
                 socketError = true
-                eventTag('storyboard_error', 'storyboard', 'Socket Error')
+                eventTag('socket_error', 'storyboard', '')
             },
-            onclose: () => {
-                socketReconnecting = true
-                eventTag('storyboard_error', 'storyboard', 'Soecket Close')
+            onclose: (e) => {
+                if (e.code !== 4001) {
+                    socketReconnecting = true
+                    eventTag('socket_close', 'storyboard', '')
+                } else {
+                    eventTag('socket_unauthorized', 'storyboard', '', () => {
+                        user.delete()
+                        router.route(`/register/${storyboardId}`)
+                    })
+                }
             },
             onopen: () => {
                 socketError = false
                 socketReconnecting = false
-                eventTag('storyboard_error', 'storyboard', 'Soecket Open')
+                eventTag('socket_open', 'storyboard', '')
             },
             onmaximum: () => {
                 socketReconnecting = false
                 eventTag(
-                    'storyboard_error',
+                    'socket_error',
                     'storyboard',
                     'Socket Reconnect Max Reached',
                 )

@@ -350,6 +350,7 @@ func (s *server) validateUserCookie(w http.ResponseWriter, r *http.Request) (str
 // serveWs handles websocket requests from the peer.
 func (s *server) serveWs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var unauthorized = false
 		vars := mux.Vars(r)
 		storyboardID := vars["id"]
 
@@ -364,24 +365,29 @@ func (s *server) serveWs() http.HandlerFunc {
 		// make sure user cookies are valid
 		userID, cookieErr := s.validateUserCookie(w, r)
 		if cookieErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+			unauthorized = true
+		} else {
+			// make sure user exists
+			_, userErr := GetStoryboardUser(storyboardID, userID)
 
-		// make sure user exists
-		_, warErr := GetStoryboardUser(storyboardID, userID)
-
-		if warErr != nil {
-			log.Println("error finding user : " + warErr.Error() + "\n")
-			s.clearUserCookies(w)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+			if userErr != nil {
+				log.Println("error finding user : " + userErr.Error() + "\n")
+				s.clearUserCookies(w)
+				unauthorized = true
+			}
 		}
 
 		// upgrade to WebSocket connection
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println(err)
+			return
+		}
+
+		if unauthorized {
+			ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4001, "unauthorized"))
+			time.Sleep(1 * time.Second)
+			ws.Close()
 			return
 		}
 
