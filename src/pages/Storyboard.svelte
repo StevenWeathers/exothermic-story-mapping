@@ -219,14 +219,18 @@
                 eventTag('socket_error', 'storyboard', '')
             },
             onclose: (e) => {
-                if (e.code !== 4001) {
-                    socketReconnecting = true
-                    eventTag('socket_close', 'storyboard', '')
-                } else {
+                if (e.code === 4004) {
+                    eventTag('not_found', 'storyboard', '', () => {
+                        router.route('/storyboards')
+                    })
+                } else if (e.code === 4001) {
                     eventTag('socket_unauthorized', 'storyboard', '', () => {
                         user.delete()
                         router.route(`/register/${storyboardId}`)
                     })
+                } else {
+                    socketReconnecting = true
+                    eventTag('socket_close', 'storyboard', '')
                 }
             },
             onopen: () => {
