@@ -201,7 +201,7 @@
                 break
             case 'storyboard_conceded':
                 // storyboard over, goodbye.
-                router.route('/')
+                router.route('/storyboards')
                 break
             default:
                 break
@@ -218,7 +218,7 @@
                 socketError = true
                 eventTag('socket_error', 'storyboard', '')
             },
-            onclose: (e) => {
+            onclose: e => {
                 if (e.code === 4004) {
                     eventTag('not_found', 'storyboard', '', () => {
                         router.route('/storyboards')

@@ -6,6 +6,7 @@
     import HollowButton from '../components/HollowButton.svelte'
     import { user } from '../stores.js'
 
+    export let xfetch
     export let notifications
     export let eventTag
     export let router
@@ -14,21 +15,12 @@
 
     function createStoryboard(e) {
         e.preventDefault()
-        const data = {
+        const body = {
             storyboardName,
         }
 
-        fetch('/api/storyboard', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        })
-            .then(function(response) {
-                return response.json()
-            })
+        xfetch('/api/storyboard', { body })
+            .then(res => res.json())
             .then(function(storyboard) {
                 eventTag('create_storyboard', 'engagement', 'success', () => {
                     router.route(`/storyboard/${storyboard.id}`)

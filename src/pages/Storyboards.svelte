@@ -8,25 +8,15 @@
     import HollowButton from '../components/HollowButton.svelte'
     import { user } from '../stores.js'
 
+    export let xfetch
     export let notifications
     export let router
     export let eventTag
 
     let storyboards = []
 
-    fetch('/api/storyboards', {
-        method: 'GET',
-        credentials: 'same-origin',
-    })
-        .then(function(response) {
-            if (!response.ok) {
-                throw Error(response.statusText)
-            }
-            return response
-        })
-        .then(function(response) {
-            return response.json()
-        })
+    xfetch('/api/storyboards')
+        .then(res => res.json())
         .then(function(bs) {
             storyboards = bs
         })
@@ -75,7 +65,11 @@
                 <h2 class="mb-4 text-2xl font-bold leading-tight">
                     Create a Storyboard
                 </h2>
-                <CreateStoryboard {notifications} {router} {eventTag} />
+                <CreateStoryboard
+                    {notifications}
+                    {router}
+                    {eventTag}
+                    {xfetch} />
             </div>
         </div>
     </div>

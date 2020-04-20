@@ -4,6 +4,7 @@
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
 
+    export let xfetch
     export let router
     export let eventTag
     export let notifications
@@ -39,23 +40,8 @@
         }
 
         if (noFormErrors) {
-            fetch('/api/user', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw Error(response.statusText)
-                    }
-                    return response
-                })
-                .then(function(response) {
-                    return response.json()
-                })
+            xfetch('/api/user', { body })
+                .then(res => res.json())
                 .then(function(newUser) {
                     user.create({
                         id: newUser.id,
@@ -100,23 +86,8 @@
         }
 
         if (noFormErrors) {
-            fetch('/api/register', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw Error(response.statusText)
-                    }
-                    return response
-                })
-                .then(function(response) {
-                    return response.json()
-                })
+            xfetch('/api/register', { body })
+                .then(res => res.json())
                 .then(function(newUser) {
                     user.create({
                         id: newUser.id,

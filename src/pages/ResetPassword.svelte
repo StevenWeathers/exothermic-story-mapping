@@ -3,6 +3,7 @@
     import SolidButton from '../components/SolidButton.svelte'
     import { user } from '../stores.js'
 
+    export let xfetch
     export let router
     export let eventTag
     export let notifications
@@ -28,20 +29,7 @@
         }
 
         if (noFormErrors) {
-            fetch('/api/auth/reset-password', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw Error(response.statusText)
-                    }
-                    return response
-                })
+            xfetch('/api/auth/reset-password', { body })
                 .then(function() {
                     eventTag('reset_password', 'engagement', 'success', () => {
                         router.route('/login', true)

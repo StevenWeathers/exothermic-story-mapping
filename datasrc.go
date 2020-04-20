@@ -14,12 +14,19 @@ import (
 
 var db *sql.DB
 
+// StoryboardUser aka user
+type StoryboardUser struct {
+	UserID   string `json:"id"`
+	UserName string `json:"name"`
+	Active   bool   `json:"active"`
+}
+
 // Storyboard A story mapping board
 type Storyboard struct {
 	StoryboardID   string            `json:"id"`
 	OwnerID        string            `json:"ownerId"`
 	StoryboardName string            `json:"name"`
-	Users          []*User           `json:"users"`
+	Users          []*StoryboardUser `json:"users"`
 	Goals          []*StoryboardGoal `json:"goals"`
 }
 
@@ -54,7 +61,7 @@ type User struct {
 	UserName  string `json:"name"`
 	UserEmail string `json:"email"`
 	UserType  string `json:"type"`
-	Active    bool   `json:"active"` // this is actually for storyboard active status
+	Verified  bool   `json:"verified"`
 }
 
 // SetupDB runs db migrations, sets up a db connection pool
@@ -118,7 +125,7 @@ func CreateStoryboard(OwnerID string, StoryboardName string) (*Storyboard, error
 		StoryboardID:   "",
 		OwnerID:        OwnerID,
 		StoryboardName: StoryboardName,
-		Users:          make([]*User, 0),
+		Users:          make([]*StoryboardUser, 0),
 	}
 
 	e := db.QueryRow(
@@ -140,7 +147,7 @@ func GetStoryboard(StoryboardID string) (*Storyboard, error) {
 		StoryboardID:   StoryboardID,
 		OwnerID:        "",
 		StoryboardName: "",
-		Users:          make([]*User, 0),
+		Users:          make([]*StoryboardUser, 0),
 		Goals:          make([]*StoryboardGoal, 0),
 	}
 
@@ -180,7 +187,7 @@ func GetStoryboardsByUser(UserID string) ([]*Storyboard, error) {
 			StoryboardID:   "",
 			OwnerID:        "",
 			StoryboardName: "",
-			Users:          make([]*User, 0),
+			Users:          make([]*StoryboardUser, 0),
 		}
 		if err := storyboardRows.Scan(
 			&b.StoryboardID,
@@ -213,9 +220,9 @@ func ConfirmOwner(StoryboardID string, userID string) error {
 }
 
 // GetStoryboardUser gets a user from db by ID and checks storyboard active status
-func GetStoryboardUser(StoryboardID string, UserID string) (*User, error) {
+func GetStoryboardUser(StoryboardID string, UserID string) (*StoryboardUser, error) {
 	var active bool
-	var w User
+	var w StoryboardUser
 
 	e := db.QueryRow(
 		`SELECT * FROM get_storyboard_user($1, $2);`,
@@ -224,8 +231,6 @@ func GetStoryboardUser(StoryboardID string, UserID string) (*User, error) {
 	).Scan(
 		&w.UserID,
 		&w.UserName,
-		&w.UserEmail,
-		&w.UserType,
 		&active,
 	)
 	if e != nil {
@@ -241,8 +246,8 @@ func GetStoryboardUser(StoryboardID string, UserID string) (*User, error) {
 }
 
 // GetStoryboardUsers retrieves the users for a given storyboard from db
-func GetStoryboardUsers(StoryboardID string) []*User {
-	var users = make([]*User, 0)
+func GetStoryboardUsers(StoryboardID string) []*StoryboardUser {
+	var users = make([]*StoryboardUser, 0)
 	rows, err := db.Query(
 		`SELECT * FROM get_storyboard_users($1);`,
 		StoryboardID,
@@ -250,8 +255,8 @@ func GetStoryboardUsers(StoryboardID string) []*User {
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
-			var w User
-			if err := rows.Scan(&w.UserID, &w.UserName, &w.UserEmail, &w.UserType, &w.Active); err != nil {
+			var w StoryboardUser
+			if err := rows.Scan(&w.UserID, &w.UserName, &w.Active); err != nil {
 				log.Println(err)
 			} else {
 				users = append(users, &w)
@@ -263,7 +268,7 @@ func GetStoryboardUsers(StoryboardID string) []*User {
 }
 
 // AddUserToStoryboard adds a user by ID to the storyboard by ID
-func AddUserToStoryboard(StoryboardID string, UserID string) ([]*User, error) {
+func AddUserToStoryboard(StoryboardID string, UserID string) ([]*StoryboardUser, error) {
 	if _, err := db.Exec(
 		`INSERT INTO storyboard_user (storyboard_id, user_id, active)
 		VALUES ($1, $2, true)
@@ -280,7 +285,7 @@ func AddUserToStoryboard(StoryboardID string, UserID string) ([]*User, error) {
 }
 
 // RetreatUser removes a user from the current storyboard by ID
-func RetreatUser(StoryboardID string, UserID string) []*User {
+func RetreatUser(StoryboardID string, UserID string) []*StoryboardUser {
 	if _, err := db.Exec(
 		`UPDATE storyboard_user SET active = false WHERE storyboard_id = $1 AND user_id = $2`, StoryboardID, UserID); err != nil {
 		log.Println(err)
@@ -602,6 +607,7 @@ func GetUser(UserID string) (*User, error) {
 		&w.UserName,
 		&w.UserEmail,
 		&w.UserType,
+		&w.Verified,
 	)
 	if e != nil {
 		log.Println(e)

@@ -6,6 +6,7 @@
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
 
+    export let xfetch
     export let router
     export let eventTag
     export let notifications
@@ -25,19 +26,8 @@
         )
     }
 
-    fetch(`/api/user/${$user.id}`, {
-        method: 'GET',
-        credentials: 'same-origin',
-    })
-        .then(function(response) {
-            if (!response.ok) {
-                throw Error(response.statusText)
-            }
-            return response
-        })
-        .then(function(response) {
-            return response.json()
-        })
+    xfetch(`/api/user/${$user.id}`)
+        .then(res => res.json())
         .then(function(wp) {
             userProfile = wp
         })
@@ -61,20 +51,7 @@
         }
 
         if (noFormErrors) {
-            fetch(`/api/user/${$user.id}`, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw Error(response.statusText)
-                    }
-                    return response
-                })
+            xfetch(`/api/user/${$user.id}`, { body })
                 .then(function(updatedUser) {
                     user.update({
                         id: userProfile.id,
@@ -111,20 +88,7 @@
         }
 
         if (noFormErrors) {
-            fetch('/api/auth/update-password', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw Error(response.statusText)
-                    }
-                    return response
-                })
+            xfetch('/api/auth/update-password', { body })
                 .then(function() {
                     notifications.success('Password updated.', 1500)
                     updatePassword = false
@@ -187,6 +151,14 @@
                             class="block text-gray-700 text-sm font-bold mb-2"
                             for="yourEmail">
                             Email
+                            {#if userProfile.verified}
+                                <span
+                                    class="font-bold text-green-600
+                                    border-green-500 border py-1 px-2 rounded
+                                    ml-1">
+                                    Verified
+                                </span>
+                            {/if}
                         </label>
                         <input
                             bind:value="{userProfile.email}"

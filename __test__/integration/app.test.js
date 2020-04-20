@@ -54,13 +54,13 @@ describe('Exothermic App', () => {
         })
 
         describe('when clicking the Delete Storyboard button', () => {
-            it('should redirect to Landing page', async () => {
+            it('should redirect to Storyboards page', async () => {
                 await expect(page).toClick('button', {
                     text: 'Delete Storyboard',
                 })
                 await page.waitFor(1000) // wait for page to redirect
-                await expect(page).toMatchElement('a', {
-                    text: 'Create a Storyboard',
+                await expect(page).toMatchElement('h1', {
+                    text: 'My Storyboards',
                 })
             })
         })

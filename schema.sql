@@ -435,23 +435,23 @@ $$ LANGUAGE plpgsql;
 -- Get a User by ID
 DROP FUNCTION IF EXISTS get_user(UUID);
 CREATE FUNCTION get_user(userId UUID) RETURNS table (
-    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128)
+    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), verified BOOL
 ) AS $$
 BEGIN
     RETURN QUERY
-        SELECT u.id, u.name, coalesce(u.email, ''), u.type FROM users u WHERE u.id = userId;
+        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.verified FROM users u WHERE u.id = userId;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Get Storyboard Users
 DROP FUNCTION IF EXISTS get_storyboard_users(uuid);
 CREATE FUNCTION get_storyboard_users(storyboardId UUID) RETURNS table (
-    id UUID, name VARCHAR(256), email VARCHAR(320), type VARCHAR(128), active BOOL
+    id UUID, name VARCHAR(256), active BOOL
 ) AS $$
 BEGIN
     RETURN QUERY
         SELECT
-			w.id, w.name, coalesce(w.email, ''), w.type, bw.active
+			w.id, w.name, bw.active
 		FROM storyboard_user bw
 		LEFT JOIN users w ON bw.user_id = w.id
 		WHERE bw.storyboard_id = storyboardId
@@ -462,12 +462,12 @@ $$ LANGUAGE plpgsql;
 -- Get Storyboard User by id
 DROP FUNCTION IF EXISTS get_storyboard_user(uuid, uuid);
 CREATE FUNCTION get_storyboard_user(storyboardId UUID, userId UUID) RETURNS table (
-    id UUID, name VARCHAR(256), email VARCHAR(320), type VARCHAR(128), active BOOL
+    id UUID, name VARCHAR(256), active BOOL
 ) AS $$
 BEGIN
     RETURN QUERY
         SELECT
-			w.id, w.name, coalesce(w.email, ''), w.type, coalesce(bw.active, FALSE)
+			w.id, w.name, coalesce(bw.active, FALSE)
 		FROM users w
 		LEFT JOIN storyboard_user bw ON bw.user_id = w.id AND bw.storyboard_id = storyboardId
 		WHERE w.id = userId;
