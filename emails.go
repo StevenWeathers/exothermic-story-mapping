@@ -52,7 +52,7 @@ func NewEmail(AppDomain string) *Email {
 		// read environment variables and sets up mailserver configuration values
 		config: &EmailConfig{
 			AppDomain:    AppDomain,
-			SenderName:   "Thunderdome",
+			SenderName:   "Exothermic",
 			smtpHost:     GetEnv("SMTP_HOST", "localhost"),
 			smtpPort:     GetEnv("SMTP_PORT", "25"),
 			smtpSecure:   GetBoolEnv("SMTP_SECURE", true),
