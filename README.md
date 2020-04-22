@@ -1,3 +1,7 @@
+![](https://github.com/StevenWeathers/exothermic-story-mapping/workflows/Go/badge.svg)
+![](https://github.com/StevenWeathers/exothermic-story-mapping/workflows/Node.js%20CI/badge.svg)
+![](https://github.com/StevenWeathers/exothermic-story-mapping/workflows/Docker/badge.svg)
+
 # Exothermic Story Mapping
 
 Exothermic is an open source agile story mapping tool, though storyboards are generic enough to be used for multiple excercises.
