@@ -12,7 +12,7 @@ import html from 'rollup-plugin-bundle-html'
 const production = !process.env.ROLLUP_WATCH
 
 export default {
-    input: 'src/main.js',
+    input: 'frontend/src/main.js',
     output: {
         sourcemap: false,
         format: 'iife',
@@ -23,7 +23,9 @@ export default {
         del({ targets: 'dist/*' }),
         svelte({
             preprocess: autoPreprocess({
-                postcss: true,
+                postcss: {
+                    configFilePath: 'build/postcss.config.js'
+                }
             }),
             // enable run-time checks when not in production
             dev: !production,
@@ -35,6 +37,9 @@ export default {
         }),
         postcss({
             extract: `dist/css/tailwind.[hash].css`,
+            config: {
+                path: 'build/postcss.config.js'
+            }
         }),
         // If you have external dependencies installed from
         // npm, you'll most likely need these plugins. In
@@ -45,7 +50,7 @@ export default {
         commonjs(),
 
         html({
-            template: 'public/index.html',
+            template: 'frontend/public/index.html',
             dest: 'dist',
             filename: 'index.html',
             absolute: true,
@@ -53,7 +58,7 @@ export default {
 
         copy({
             targets: {
-                'public/img': 'dist/img',
+                'frontend/public/img': 'dist/img',
             },
         }),
 

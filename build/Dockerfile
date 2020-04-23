@@ -4,14 +4,14 @@
 FROM node:10.14.1-alpine as builderNode
 
 RUN mkdir /webapp
-COPY ./src/ /webapp/src/
-COPY ./public/ /webapp/public/
+COPY ./frontend/ /webapp/frontend/
+COPY ./build/*.js /webapp/build/
 COPY ./*.json /webapp/
 COPY ./*.js /webapp/
 WORKDIR /webapp
 # install node packages
 RUN npm set progress=false
-RUN npm install
+RUN npm ci
 # Build the web app
 RUN npm run build
 ############################
