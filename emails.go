@@ -279,7 +279,7 @@ func (m *Email) SendPasswordReset(UserName string, UserEmail string) error {
 		hermes.Body{
 			Name: UserName,
 			Intros: []string{
-				"Your Exothermic password was succesfully reset.",
+				"Your Exothermic password was successfully reset.",
 			},
 			Actions: []hermes.Action{
 				{
@@ -300,7 +300,7 @@ func (m *Email) SendPasswordReset(UserName string, UserEmail string) error {
 	sendErr := m.Send(
 		UserName,
 		UserEmail,
-		"Your Exothermic password was succesfully reset.",
+		"Your Exothermic password was successfully reset.",
 		emailBody,
 	)
 	if sendErr != nil {
@@ -317,7 +317,7 @@ func (m *Email) SendPasswordUpdate(UserName string, UserEmail string) error {
 		hermes.Body{
 			Name: UserName,
 			Intros: []string{
-				"Your Exothermic password was succesfully updated.",
+				"Your Exothermic password was successfully updated.",
 			},
 			Actions: []hermes.Action{
 				{
@@ -338,7 +338,7 @@ func (m *Email) SendPasswordUpdate(UserName string, UserEmail string) error {
 	sendErr := m.Send(
 		UserName,
 		UserEmail,
-		"Your Exothermic password was succesfully updated.",
+		"Your Exothermic password was successfully updated.",
 		emailBody,
 	)
 	if sendErr != nil {
