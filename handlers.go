@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -9,7 +10,125 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/markbates/pkger"
+	"gopkg.in/go-playground/validator.v9"
 )
+
+type userAccount struct {
+	Name      string `json:"name" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+	Password1 string `json:"password1" validate:"required,min=6,max=72"`
+	Password2 string `json:"password2" validate:"required,min=6,max=72,eqfield=Password1"`
+}
+
+type userPassword struct {
+	Password1 string `json:"password1" validate:"required,min=6,max=72"`
+	Password2 string `json:"password2" validate:"required,min=6,max=72,eqfield=Password1"`
+}
+
+// ValidateUserAccount makes sure user name, email, and password are valid before creating the account
+func ValidateUserAccount(name string, email string, pwd1 string, pwd2 string) (UserName string, UserEmail string, UserPassword string, validateErr error) {
+	v := validator.New()
+	a := userAccount{
+		Name:      name,
+		Email:     email,
+		Password1: pwd1,
+		Password2: pwd2,
+	}
+	err := v.Struct(a)
+
+	return name, email, pwd1, err
+}
+
+// ValidateUserPassword makes sure user password is valid before updating the password
+func ValidateUserPassword(pwd1 string, pwd2 string) (UserPassword string, validateErr error) {
+	v := validator.New()
+	a := userPassword{
+		Password1: pwd1,
+		Password2: pwd2,
+	}
+	err := v.Struct(a)
+
+	return pwd1, err
+}
+
+// RespondWithJSON takes a payload and writes the response
+func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	response, _ := json.Marshal(payload)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
+}
+
+// createUserCookie creates the users cookie
+func (s *server) createUserCookie(w http.ResponseWriter, isRegistered bool, UserID string) {
+	var cookiedays = 365 // 356 days
+	if isRegistered == true {
+		cookiedays = 30 // 30 days
+	}
+
+	encoded, err := s.cookie.Encode(s.config.SecureCookieName, UserID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+
+	}
+
+	cookie := &http.Cookie{
+		Name:     s.config.SecureCookieName,
+		Value:    encoded,
+		Path:     "/",
+		HttpOnly: true,
+		Domain:   s.config.AppDomain,
+		MaxAge:   86400 * cookiedays,
+		Secure:   s.config.SecureCookieFlag,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, cookie)
+}
+
+// clearUserCookies wipes the frontend and backend cookies
+// used in the event of bad cookie reads
+func (s *server) clearUserCookies(w http.ResponseWriter) {
+	feCookie := &http.Cookie{
+		Name:   s.config.FrontendCookieName,
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	}
+	beCookie := &http.Cookie{
+		Name:     s.config.SecureCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, feCookie)
+	http.SetCookie(w, beCookie)
+}
+
+// validateUserCookie returns the userID from secure cookies or errors if failures getting it
+func (s *server) validateUserCookie(w http.ResponseWriter, r *http.Request) (string, error) {
+	var userID string
+
+	if cookie, err := r.Cookie(s.config.SecureCookieName); err == nil {
+		var value string
+		if err = s.cookie.Decode(s.config.SecureCookieName, cookie.Value, &value); err == nil {
+			userID = value
+		} else {
+			log.Println("error in reading user cookie : " + err.Error() + "\n")
+			s.clearUserCookies(w)
+			return "", errors.New("invalid user cookies")
+		}
+	} else {
+		log.Println("error in reading user cookie : " + err.Error() + "\n")
+		s.clearUserCookies(w)
+		return "", errors.New("invalid user cookies")
+	}
+
+	return userID, nil
+}
 
 /*
 	Middlewares
@@ -24,7 +143,7 @@ func (s *server) adminOnly(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		adminErr := ConfirmAdmin(userID)
+		adminErr := s.database.ConfirmAdmin(userID)
 		if adminErr != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -84,7 +203,7 @@ func (s *server) handleLogin() http.HandlerFunc {
 		UserEmail := keyVal["userEmail"]
 		UserPassword := keyVal["userPassword"]
 
-		authedUser, err := AuthUser(UserEmail, UserPassword)
+		authedUser, err := s.database.AuthUser(UserEmail, UserPassword)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -130,7 +249,7 @@ func (s *server) handleStoryboardCreate() http.HandlerFunc {
 			return
 		}
 
-		_, warErr := GetUser(userID)
+		_, warErr := s.database.GetUser(userID)
 
 		if warErr != nil {
 			log.Println("error finding user : " + warErr.Error() + "\n")
@@ -151,7 +270,7 @@ func (s *server) handleStoryboardCreate() http.HandlerFunc {
 		}
 		json.Unmarshal(body, &keyVal) // check for errors
 
-		newStoryboard, err := CreateStoryboard(userID, keyVal.StoryboardName)
+		newStoryboard, err := s.database.CreateStoryboard(userID, keyVal.StoryboardName)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -175,7 +294,7 @@ func (s *server) handleUserRecruit() http.HandlerFunc {
 
 		UserName := keyVal["userName"]
 
-		newUser, err := CreateUserGuest(UserName)
+		newUser, err := s.database.CreateUserGuest(UserName)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -212,7 +331,7 @@ func (s *server) handleUserEnlist() http.HandlerFunc {
 			return
 		}
 
-		newUser, VerifyID, err := CreateUserRegistered(UserName, UserEmail, UserPassword, ActiveUserID)
+		newUser, VerifyID, err := s.database.CreateUserRegistered(UserName, UserEmail, UserPassword, ActiveUserID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -232,7 +351,7 @@ func (s *server) handleStoryboardGet() http.HandlerFunc {
 		vars := mux.Vars(r)
 		StoryboardID := vars["id"]
 
-		storyboard, err := GetStoryboard(StoryboardID)
+		storyboard, err := s.database.GetStoryboard(StoryboardID)
 
 		if err != nil {
 			http.NotFound(w, r)
@@ -252,7 +371,7 @@ func (s *server) handleStoryboardsGet() http.HandlerFunc {
 			return
 		}
 
-		_, warErr := GetUser(userID)
+		_, warErr := s.database.GetUser(userID)
 
 		if warErr != nil {
 			log.Println("error finding user : " + warErr.Error() + "\n")
@@ -261,7 +380,7 @@ func (s *server) handleStoryboardsGet() http.HandlerFunc {
 			return
 		}
 
-		storyboards, err := GetStoryboardsByUser(userID)
+		storyboards, err := s.database.GetStoryboardsByUser(userID)
 
 		if err != nil {
 			http.NotFound(w, r)
@@ -281,7 +400,7 @@ func (s *server) handleForgotPassword() http.HandlerFunc {
 		json.Unmarshal(body, &keyVal) // check for errors
 		UserEmail := keyVal["userEmail"]
 
-		ResetID, UserName, resetErr := UserResetRequest(UserEmail)
+		ResetID, UserName, resetErr := s.database.UserResetRequest(UserEmail)
 		if resetErr != nil {
 			log.Println("error attempting to send user reset : " + resetErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -314,7 +433,7 @@ func (s *server) handleResetPassword() http.HandlerFunc {
 			return
 		}
 
-		UserName, UserEmail, resetErr := UserResetPassword(ResetID, UserPassword)
+		UserName, UserEmail, resetErr := s.database.UserResetPassword(ResetID, UserPassword)
 		if resetErr != nil {
 			log.Println("error attempting to reset user password : " + resetErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -350,7 +469,7 @@ func (s *server) handleUpdatePassword() http.HandlerFunc {
 			return
 		}
 
-		UserName, UserEmail, updateErr := UserUpdatePassword(userID, UserPassword)
+		UserName, UserEmail, updateErr := s.database.UserUpdatePassword(userID, UserPassword)
 		if updateErr != nil {
 			log.Println("error attempting to update user password : " + updateErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -375,7 +494,7 @@ func (s *server) handleUserProfile() http.HandlerFunc {
 			return
 		}
 
-		user, warErr := GetUser(UserID)
+		user, warErr := s.database.GetUser(UserID)
 		if warErr != nil {
 			log.Println("error finding user : " + warErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -402,7 +521,7 @@ func (s *server) handleUserProfileUpdate() http.HandlerFunc {
 			return
 		}
 
-		updateErr := UpdateUserProfile(UserID, UserName)
+		updateErr := s.database.UpdateUserProfile(UserID, UserName)
 		if updateErr != nil {
 			log.Println("error attempting to update user profile : " + updateErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -422,7 +541,7 @@ func (s *server) handleAccountVerification() http.HandlerFunc {
 		json.Unmarshal(body, &keyVal) // check for errors
 		VerifyID := keyVal["verifyId"]
 
-		verifyErr := VerifyUserAccount(VerifyID)
+		verifyErr := s.database.VerifyUserAccount(VerifyID)
 		if verifyErr != nil {
 			log.Println("error attempting to verify user account : " + verifyErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -440,7 +559,7 @@ func (s *server) handleAccountVerification() http.HandlerFunc {
 // handleAppStats gets the applications stats
 func (s *server) handleAppStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		AppStats, err := GetAppStats()
+		AppStats, err := s.database.GetAppStats()
 
 		if err != nil {
 			http.NotFound(w, r)

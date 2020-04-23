@@ -95,7 +95,7 @@
 
     function handle401() {
         eventTag('session_expired', 'engagement', 'unauthorized', () => {
-            warrior.delete()
+            user.delete()
             router.route('/login')
         })
     }

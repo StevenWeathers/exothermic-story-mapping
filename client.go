@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -60,13 +59,13 @@ func CreateSocketEvent(EventType string, EventValue string, EventUser string) []
 }
 
 // readPump pumps messages from the websocket connection to the hub.
-func (s subscription) readPump() {
+func (s subscription) readPump(srv *server) {
 	c := s.conn
 	defer func() {
 		StoryboardID := s.arena
 		UserID := s.userID
 
-		Users := RetreatUser(StoryboardID, UserID)
+		Users := srv.database.RetreatUser(StoryboardID, UserID)
 		updatedUsers, _ := json.Marshal(Users)
 
 		retreatEvent := CreateSocketEvent("user_retreated", string(updatedUsers), UserID)
@@ -96,7 +95,7 @@ func (s subscription) readPump() {
 
 		switch keyVal["type"] {
 		case "add_goal":
-			goals, err := CreateStoryboardGoal(storyboardID, userID, keyVal["value"])
+			goals, err := srv.database.CreateStoryboardGoal(storyboardID, userID, keyVal["value"])
 			if err != nil {
 				badEvent = true
 				break
@@ -109,7 +108,7 @@ func (s subscription) readPump() {
 			GoalID := goalObj["goalId"]
 			GoalName := goalObj["name"]
 
-			goals, err := ReviseGoalName(storyboardID, userID, GoalID, GoalName)
+			goals, err := srv.database.ReviseGoalName(storyboardID, userID, GoalID, GoalName)
 			if err != nil {
 				badEvent = true
 				break
@@ -117,7 +116,7 @@ func (s subscription) readPump() {
 			updatedGoals, _ := json.Marshal(goals)
 			msg = CreateSocketEvent("goal_revised", string(updatedGoals), "")
 		case "delete_goal":
-			goals, err := DeleteStoryboardGoal(storyboardID, userID, keyVal["value"])
+			goals, err := srv.database.DeleteStoryboardGoal(storyboardID, userID, keyVal["value"])
 			if err != nil {
 				badEvent = true
 				break
@@ -129,7 +128,7 @@ func (s subscription) readPump() {
 			json.Unmarshal([]byte(keyVal["value"]), &goalObj)
 			GoalID := goalObj["goalId"]
 
-			goals, err := CreateStoryboardColumn(storyboardID, GoalID, userID)
+			goals, err := srv.database.CreateStoryboardColumn(storyboardID, GoalID, userID)
 			if err != nil {
 				badEvent = true
 				break
@@ -137,7 +136,7 @@ func (s subscription) readPump() {
 			updatedGoals, _ := json.Marshal(goals)
 			msg = CreateSocketEvent("column_added", string(updatedGoals), "")
 		case "delete_column":
-			goals, err := DeleteStoryboardColumn(storyboardID, userID, keyVal["value"])
+			goals, err := srv.database.DeleteStoryboardColumn(storyboardID, userID, keyVal["value"])
 			if err != nil {
 				badEvent = true
 				break
@@ -150,7 +149,7 @@ func (s subscription) readPump() {
 			GoalID := goalObj["goalId"]
 			ColumnID := goalObj["columnId"]
 
-			goals, err := CreateStoryboardStory(storyboardID, GoalID, ColumnID, userID)
+			goals, err := srv.database.CreateStoryboardStory(storyboardID, GoalID, ColumnID, userID)
 			if err != nil {
 				badEvent = true
 				break
@@ -163,7 +162,7 @@ func (s subscription) readPump() {
 			StoryID := goalObj["storyId"]
 			StoryName := goalObj["name"]
 
-			goals, err := ReviseStoryName(storyboardID, userID, StoryID, StoryName)
+			goals, err := srv.database.ReviseStoryName(storyboardID, userID, StoryID, StoryName)
 			if err != nil {
 				badEvent = true
 				break
@@ -176,7 +175,7 @@ func (s subscription) readPump() {
 			StoryID := goalObj["storyId"]
 			StoryContent := goalObj["content"]
 
-			goals, err := ReviseStoryContent(storyboardID, userID, StoryID, StoryContent)
+			goals, err := srv.database.ReviseStoryContent(storyboardID, userID, StoryID, StoryContent)
 			if err != nil {
 				badEvent = true
 				break
@@ -189,7 +188,7 @@ func (s subscription) readPump() {
 			StoryID := goalObj["storyId"]
 			StoryColor := goalObj["color"]
 
-			goals, err := ReviseStoryColor(storyboardID, userID, StoryID, StoryColor)
+			goals, err := srv.database.ReviseStoryColor(storyboardID, userID, StoryID, StoryColor)
 			if err != nil {
 				badEvent = true
 				break
@@ -204,7 +203,7 @@ func (s subscription) readPump() {
 			ColumnID := goalObj["columnId"]
 			PlaceBefore := goalObj["placeBefore"]
 
-			goals, err := MoveStoryboardStory(storyboardID, userID, StoryID, GoalID, ColumnID, PlaceBefore)
+			goals, err := srv.database.MoveStoryboardStory(storyboardID, userID, StoryID, GoalID, ColumnID, PlaceBefore)
 			if err != nil {
 				badEvent = true
 				break
@@ -212,7 +211,7 @@ func (s subscription) readPump() {
 			updatedGoals, _ := json.Marshal(goals)
 			msg = CreateSocketEvent("story_moved", string(updatedGoals), "")
 		case "delete_story":
-			goals, err := DeleteStoryboardStory(storyboardID, userID, keyVal["value"])
+			goals, err := srv.database.DeleteStoryboardStory(storyboardID, userID, keyVal["value"])
 			if err != nil {
 				badEvent = true
 				break
@@ -220,7 +219,7 @@ func (s subscription) readPump() {
 			updatedGoals, _ := json.Marshal(goals)
 			msg = CreateSocketEvent("story_deleted", string(updatedGoals), "")
 		case "promote_owner":
-			storyboard, err := SetStoryboardOwner(storyboardID, userID, keyVal["value"])
+			storyboard, err := srv.database.SetStoryboardOwner(storyboardID, userID, keyVal["value"])
 			if err != nil {
 				badEvent = true
 				break
@@ -229,7 +228,7 @@ func (s subscription) readPump() {
 			updatedStoryboard, _ := json.Marshal(storyboard)
 			msg = CreateSocketEvent("storyboard_updated", string(updatedStoryboard), "")
 		case "concede_storyboard":
-			err := DeleteStoryboard(storyboardID, userID)
+			err := srv.database.DeleteStoryboard(storyboardID, userID)
 			if err != nil {
 				badEvent = true
 				break
@@ -277,76 +276,6 @@ func (s *subscription) writePump() {
 	}
 }
 
-// createUserCookie creates the users cookie
-func (s *server) createUserCookie(w http.ResponseWriter, isRegistered bool, UserID string) {
-	var cookiedays = 365 // 356 days
-	if isRegistered == true {
-		cookiedays = 30 // 30 days
-	}
-
-	encoded, err := s.cookie.Encode(s.config.SecureCookieName, UserID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-
-	}
-
-	cookie := &http.Cookie{
-		Name:     s.config.SecureCookieName,
-		Value:    encoded,
-		Path:     "/",
-		HttpOnly: true,
-		Domain:   s.config.AppDomain,
-		MaxAge:   86400 * cookiedays,
-		Secure:   s.config.SecureCookieFlag,
-		SameSite: http.SameSiteStrictMode,
-	}
-	http.SetCookie(w, cookie)
-}
-
-// clearUserCookies wipes the frontend and backend cookies
-// used in the event of bad cookie reads
-func (s *server) clearUserCookies(w http.ResponseWriter) {
-	feCookie := &http.Cookie{
-		Name:   s.config.FrontendCookieName,
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	}
-	beCookie := &http.Cookie{
-		Name:     s.config.SecureCookieName,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-	}
-
-	http.SetCookie(w, feCookie)
-	http.SetCookie(w, beCookie)
-}
-
-// validateUserCookie returns the userID from secure cookies or errors if failures getting it
-func (s *server) validateUserCookie(w http.ResponseWriter, r *http.Request) (string, error) {
-	var userID string
-
-	if cookie, err := r.Cookie(s.config.SecureCookieName); err == nil {
-		var value string
-		if err = s.cookie.Decode(s.config.SecureCookieName, cookie.Value, &value); err == nil {
-			userID = value
-		} else {
-			log.Println("error in reading user cookie : " + err.Error() + "\n")
-			s.clearUserCookies(w)
-			return "", errors.New("invalid user cookies")
-		}
-	} else {
-		log.Println("error in reading user cookie : " + err.Error() + "\n")
-		s.clearUserCookies(w)
-		return "", errors.New("invalid user cookies")
-	}
-
-	return userID, nil
-}
-
 // serveWs handles websocket requests from the peer.
 func (s *server) serveWs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -362,7 +291,7 @@ func (s *server) serveWs() http.HandlerFunc {
 		}
 
 		// make sure storyboard is legit
-		b, storyboardErr := GetStoryboard(storyboardID)
+		b, storyboardErr := s.database.GetStoryboard(storyboardID)
 		if storyboardErr != nil {
 			ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4004, "battle not found"))
 			ws.Close()
@@ -376,7 +305,7 @@ func (s *server) serveWs() http.HandlerFunc {
 			unauthorized = true
 		} else {
 			// make sure user exists
-			_, userErr := GetStoryboardUser(storyboardID, userID)
+			_, userErr := s.database.GetStoryboardUser(storyboardID, userID)
 
 			if userErr != nil {
 				log.Println("error finding user : " + userErr.Error() + "\n")
@@ -395,7 +324,7 @@ func (s *server) serveWs() http.HandlerFunc {
 		ss := subscription{c, storyboardID, userID}
 		h.register <- ss
 
-		Users, _ := AddUserToStoryboard(ss.arena, userID)
+		Users, _ := s.database.AddUserToStoryboard(ss.arena, userID)
 		updatedUsers, _ := json.Marshal(Users)
 
 		initEvent := CreateSocketEvent("init", string(storyboard), userID)
@@ -406,6 +335,6 @@ func (s *server) serveWs() http.HandlerFunc {
 		h.broadcast <- m
 
 		go ss.writePump()
-		ss.readPump()
+		ss.readPump(s)
 	}
 }
