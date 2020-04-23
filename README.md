@@ -1,6 +1,8 @@
 ![](https://github.com/StevenWeathers/exothermic-story-mapping/workflows/Go/badge.svg)
 ![](https://github.com/StevenWeathers/exothermic-story-mapping/workflows/Node.js%20CI/badge.svg)
 ![](https://github.com/StevenWeathers/exothermic-story-mapping/workflows/Docker/badge.svg)
+![](https://img.shields.io/docker/cloud/build/stevenweathers/exothermic-story-mapping.svg)
+![](https://img.shields.io/docker/pulls/stevenweathers/exothermic-story-mapping.svg)
 
 # Exothermic Story Mapping
 
