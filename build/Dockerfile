@@ -1,7 +1,7 @@
 ############################
 # STEP 1 build the ui
 ############################
-FROM node:10.14.1-alpine as builderNode
+FROM node:12-alpine as builderNode
 
 RUN mkdir /webapp
 COPY ./frontend/ /webapp/frontend/
@@ -35,7 +35,6 @@ COPY --from=builderNode /webapp/dist $GOPATH/src/github.com/stevenweathers/exoth
 # Set working dir
 WORKDIR $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
 # Fetch dependencies.
-RUN go get -d -v
 RUN go install -v github.com/markbates/pkger/cmd/pkger
 RUN go mod download
 # Bundle the static assets
