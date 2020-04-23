@@ -25,6 +25,7 @@ RUN apk update && apk add --no-cache git ca-certificates
 # Create appuser
 RUN adduser -D -g '' appuser
 # Copy the go source
+COPY ./pkg/ $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/pkg/
 COPY ./*.go $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
 COPY ./go.mod $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
 COPY ./go.sum $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
