@@ -41,6 +41,35 @@ func ComparePasswords(hashedPwd string, plainPwd []byte) bool {
 	return true
 }
 
+// GetRegisteredUsers retrieves the registered users from db
+func (d *Database) GetRegisteredUsers() []*User {
+	var users = make([]*User, 0)
+	rows, err := d.db.Query(
+		"SELECT id, name, email, type, avatar, verified FROM users WHERE email IS NOT NULL",
+	)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var w User
+			var userEmail sql.NullString
+
+			if err := rows.Scan(&w.UserID,
+				&w.UserName,
+				&userEmail,
+				&w.UserType,
+				&w.UserAvatar,
+				&w.Verified); err != nil {
+				log.Println(err)
+			} else {
+				w.UserEmail = userEmail.String
+				users = append(users, &w)
+			}
+		}
+	}
+
+	return users
+}
+
 // GetUser gets a user from db by ID
 func (d *Database) GetUser(UserID string) (*User, error) {
 	var w User
@@ -61,6 +90,27 @@ func (d *Database) GetUser(UserID string) (*User, error) {
 	}
 
 	return &w, nil
+}
+
+// GetUserByEmail gets a user by email
+func (d *Database) GetUserByEmail(UserEmail string) (*User, error) {
+	var u User
+	e := d.db.QueryRow(
+		"SELECT id, name, email, type, verified FROM users WHERE email = $1",
+		UserEmail,
+	).Scan(
+		&u.UserID,
+		&u.UserName,
+		&u.UserEmail,
+		&u.UserType,
+		&u.Verified,
+	)
+	if e != nil {
+		log.Println(e)
+		return nil, errors.New("user email not found")
+	}
+
+	return &u, nil
 }
 
 // AuthUser attempts to authenticate the user
@@ -144,11 +194,12 @@ func (d *Database) CreateUserRegistered(UserName string, UserEmail string, UserP
 }
 
 // UpdateUserProfile attempts to update the users profile
-func (d *Database) UpdateUserProfile(UserID string, UserName string) error {
+func (d *Database) UpdateUserProfile(UserID string, UserName string, UserAvatar string) error {
 	if _, err := d.db.Exec(
-		`UPDATE users SET name = $2 WHERE id = $1;`,
+		`UPDATE users SET name = $2, avatar = $3 WHERE id = $1;`,
 		UserID,
 		UserName,
+		UserAvatar,
 	); err != nil {
 		log.Println(err)
 		return errors.New("Error attempting to update users profile")

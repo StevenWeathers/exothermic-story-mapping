@@ -1,15 +1,23 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"html/template"
+	"image"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/anthonynsimon/bild/transform"
 	"github.com/gorilla/mux"
+	"github.com/ipsn/go-adorable"
 	"github.com/markbates/pkger"
+	"github.com/o1egl/govatar"
+	"github.com/spf13/viper"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -77,7 +85,7 @@ func (s *server) createUserCookie(w http.ResponseWriter, isRegistered bool, User
 	cookie := &http.Cookie{
 		Name:     s.config.SecureCookieName,
 		Value:    encoded,
-		Path:     "/",
+		Path:     s.config.PathPrefix + "/",
 		HttpOnly: true,
 		Domain:   s.config.AppDomain,
 		MaxAge:   86400 * cookiedays,
@@ -158,9 +166,21 @@ func (s *server) adminOnly(h http.HandlerFunc) http.HandlerFunc {
 
 // handleIndex parses the index html file, injecting any relevant data
 func (s *server) handleIndex() http.HandlerFunc {
+	type AppConfig struct {
+		AvatarService     string
+		ToastTimeout      int
+		AllowGuests       bool
+		AllowRegistration bool
+		DefaultLocale     string
+		AuthMethod        string
+		AppVersion        string
+		CookieName        string
+		PathPrefix        string
+	}
 	type UIConfig struct {
 		AnalyticsEnabled bool
 		AnalyticsID      string
+		AppConfig        AppConfig
 	}
 
 	// get the html template from dist, have it ready for requests
@@ -183,9 +203,22 @@ func (s *server) handleIndex() http.HandlerFunc {
 		log.Fatal(tmplErr)
 	}
 
+	appConfig := AppConfig{
+		AvatarService:     viper.GetString("config.avatar_service"),
+		ToastTimeout:      viper.GetInt("config.toast_timeout"),
+		AllowGuests:       viper.GetBool("config.allow_guests"),
+		AllowRegistration: viper.GetBool("config.allow_registration") && viper.GetString("auth.method") == "normal",
+		DefaultLocale:     viper.GetString("config.default_locale"),
+		AuthMethod:        viper.GetString("auth.method"),
+		AppVersion:        s.config.Version,
+		CookieName:        s.config.FrontendCookieName,
+		PathPrefix:        s.config.PathPrefix,
+	}
+
 	data := UIConfig{
 		AnalyticsEnabled: s.config.AnalyticsEnabled,
 		AnalyticsID:      s.config.AnalyticsID,
+		AppConfig:        appConfig,
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -203,24 +236,14 @@ func (s *server) handleLogin() http.HandlerFunc {
 		UserEmail := keyVal["userEmail"]
 		UserPassword := keyVal["userPassword"]
 
-		authedUser, err := s.database.AuthUser(UserEmail, UserPassword)
+		authedUser, err := s.authUserDatabase(UserEmail, UserPassword)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		encoded, err := s.cookie.Encode(s.config.SecureCookieName, authedUser.UserID)
-		if err == nil {
-			cookie := &http.Cookie{
-				Name:     s.config.SecureCookieName,
-				Value:    encoded,
-				Path:     "/",
-				HttpOnly: true,
-				Domain:   s.config.AppDomain,
-				MaxAge:   86400 * 30, // 30 days
-				Secure:   s.config.SecureCookieFlag,
-				SameSite: http.SameSiteStrictMode,
-			}
+		cookie := s.createCookie(authedUser.UserID)
+		if cookie != nil {
 			http.SetCookie(w, cookie)
 		} else {
 			log.Println(err)
@@ -228,6 +251,34 @@ func (s *server) handleLogin() http.HandlerFunc {
 			return
 		}
 
+		RespondWithJSON(w, http.StatusOK, authedUser)
+	}
+}
+
+// handleLdapLogin attempts to authenticate the user by looking up and authenticating
+// via ldap, and then creates the user if not existing and logs them in
+func (s *server) handleLdapLogin() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body)
+		keyVal := make(map[string]string)
+		json.Unmarshal(body, &keyVal)
+		UserEmail := keyVal["userEmail"]
+		UserPassword := keyVal["userPassword"]
+
+		authedUser, err := s.authAndCreateUserLdap(UserEmail, UserPassword)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		cookie := s.createCookie(authedUser.UserID)
+		if cookie != nil {
+			http.SetCookie(w, cookie)
+		} else {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		RespondWithJSON(w, http.StatusOK, authedUser)
 	}
 }
@@ -283,6 +334,12 @@ func (s *server) handleStoryboardCreate() http.HandlerFunc {
 // handleUserRecruit registers a user as a guest user
 func (s *server) handleUserRecruit() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		AllowGuests := viper.GetBool("config.allow_guests")
+		if !AllowGuests {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		body, _ := ioutil.ReadAll(r.Body) // check for errors
 
 		keyVal := make(map[string]string)
@@ -309,6 +366,12 @@ func (s *server) handleUserRecruit() http.HandlerFunc {
 // handleUserEnlist registers a user as a registered user (authenticated)
 func (s *server) handleUserEnlist() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		AllowRegistration := viper.GetBool("config.allow_registration")
+		if !AllowRegistration {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		body, _ := ioutil.ReadAll(r.Body) // check for errors
 		keyVal := make(map[string]string)
 		jsonErr := json.Unmarshal(body, &keyVal) // check for errors
@@ -510,9 +573,10 @@ func (s *server) handleUserProfileUpdate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		body, _ := ioutil.ReadAll(r.Body) // check for errors
-		keyVal := make(map[string]string)
+		keyVal := make(map[string]interface{})
 		json.Unmarshal(body, &keyVal) // check for errors
-		UserName := keyVal["userName"]
+		UserName := keyVal["userName"].(string)
+		UserAvatar := keyVal["userAvatar"].(string)
 
 		UserID := vars["id"]
 		userCookieID, cookieErr := s.validateUserCookie(w, r)
@@ -521,7 +585,7 @@ func (s *server) handleUserProfileUpdate() http.HandlerFunc {
 			return
 		}
 
-		updateErr := s.database.UpdateUserProfile(UserID, UserName)
+		updateErr := s.database.UpdateUserProfile(UserID, UserName, UserAvatar)
 		if updateErr != nil {
 			log.Println("error attempting to update user profile : " + updateErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -552,6 +616,52 @@ func (s *server) handleAccountVerification() http.HandlerFunc {
 	}
 }
 
+// handleUserAvatar creates an avatar for the given user by ID
+func (s *server) handleUserAvatar() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		Width, _ := strconv.Atoi(vars["width"])
+		UserID := vars["id"]
+		AvatarGender := govatar.MALE
+		userGender, ok := vars["avatar"]
+		if ok {
+			if userGender == "female" {
+				AvatarGender = govatar.FEMALE
+			}
+		}
+
+		var avatar image.Image
+		if s.config.AvatarService == "govatar" {
+			avatar, _ = govatar.GenerateForUsername(AvatarGender, UserID)
+		} else { // must be goadorable
+			var err error
+			avatar, _, err = image.Decode(bytes.NewReader(adorable.PseudoRandom([]byte(UserID))))
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+
+		img := transform.Resize(avatar, Width, Width, transform.Linear)
+		buffer := new(bytes.Buffer)
+
+		if err := png.Encode(buffer, img); err != nil {
+			log.Println("unable to encode image.")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Content-Length", strconv.Itoa(len(buffer.Bytes())))
+
+		if _, err := w.Write(buffer.Bytes()); err != nil {
+			log.Println("unable to write image.")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 /*
 	Admin Handlers
 */
@@ -567,5 +677,49 @@ func (s *server) handleAppStats() http.HandlerFunc {
 		}
 
 		RespondWithJSON(w, http.StatusOK, AppStats)
+	}
+}
+
+// handleGetRegisteredUsers gets a list of registered users
+func (s *server) handleGetRegisteredUsers() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		Users := s.database.GetRegisteredUsers()
+
+		RespondWithJSON(w, http.StatusOK, Users)
+	}
+}
+
+// handleUserCreate registers a user as a registered user
+func (s *server) handleUserCreate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body) // check for errors
+		keyVal := make(map[string]string)
+		jsonErr := json.Unmarshal(body, &keyVal) // check for errors
+		if jsonErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		UserName, UserEmail, UserPassword, accountErr := ValidateUserAccount(
+			keyVal["userName"],
+			keyVal["userEmail"],
+			keyVal["userPassword1"],
+			keyVal["userPassword2"],
+		)
+
+		if accountErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		newUser, VerifyID, err := s.database.CreateUserRegistered(UserName, UserEmail, UserPassword, "")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		s.email.SendWelcome(UserName, UserEmail, VerifyID)
+
+		RespondWithJSON(w, http.StatusOK, newUser)
 	}
 }

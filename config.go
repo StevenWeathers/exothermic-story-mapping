@@ -1,0 +1,91 @@
+package main
+
+import (
+	"log"
+
+	"github.com/spf13/viper"
+)
+
+// InitConfig initializes the application configuration
+func InitConfig() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+
+	viper.AddConfigPath("/etc/exothermic/")
+	viper.AddConfigPath("$HOME/.config/exothermic/")
+	viper.AddConfigPath(".")
+
+	viper.SetDefault("http.cookie_hashkey", "pyro-maniac")
+	viper.SetDefault("http.port", "8080")
+	viper.SetDefault("http.secure_cookie", true)
+	viper.SetDefault("http.backend_cookie_name", "userId")
+	viper.SetDefault("http.frontend_cookie_name", "user")
+	viper.SetDefault("http.domain", "exothermic.dev")
+	viper.SetDefault("http.path_prefix", "")
+
+	viper.SetDefault("analytics.enabled", true)
+	viper.SetDefault("analytics.id", "UA-161935945-1")
+
+	viper.SetDefault("db.host", "db")
+	viper.SetDefault("db.port", 5432)
+	viper.SetDefault("db.user", "thor")
+	viper.SetDefault("db.pass", "odinson")
+	viper.SetDefault("db.name", "exothermic")
+	viper.SetDefault("db.sslmode", "disable")
+
+	viper.SetDefault("smtp.host", "localhost")
+	viper.SetDefault("smtp.port", "25")
+	viper.SetDefault("smtp.secure", true)
+	viper.SetDefault("smtp.sender", "no-reply@exothermic.dev")
+
+	viper.SetDefault("config.avatar_service", "default")
+	viper.SetDefault("config.toast_timeout", 1000)
+	viper.SetDefault("config.allow_guests", true)
+	viper.SetDefault("config.allow_registration", true)
+	viper.SetDefault("config.default_locale", "en")
+
+	viper.SetDefault("auth.method", "normal")
+	viper.SetDefault("auth.ldap.filter", "(&(objectClass=posixAccount)(mail=%s))")
+	viper.SetDefault("auth.ldap.mail_attr", "mail")
+	viper.SetDefault("auth.ldap.cn_attr", "cn")
+
+	viper.BindEnv("http.cookie_hashkey", "COOKIE_HASHKEY")
+	viper.BindEnv("http.port", "PORT")
+	viper.BindEnv("http.secure_cookie", "COOKIE_SECURE")
+	viper.BindEnv("http.backend_cookie_name", "SECURE_COOKIE_NAME")
+	viper.BindEnv("http.frontend_cookie_name", "FRONTEND_COOKIE_NAME")
+	viper.BindEnv("http.domain", "APP_DOMAIN")
+	viper.BindEnv("http.path_prefix", "PATH_PREFIX")
+
+	viper.BindEnv("analytics.enabled", "ANALYTICS_ENABLED")
+	viper.BindEnv("analytics.id", "ANALYTICS_ID")
+	viper.BindEnv("admin.email", "ADMIN_EMAIL")
+
+	viper.BindEnv("db.host", "DB_HOST")
+	viper.BindEnv("db.port", "DB_PORT")
+	viper.BindEnv("db.user", "DB_USER")
+	viper.BindEnv("db.pass", "DB_PASS")
+	viper.BindEnv("db.name", "DB_NAME")
+	viper.BindEnv("db.sslmode", "DB_SSLMODE")
+
+	viper.BindEnv("smtp.host", "SMTP_HOST")
+	viper.BindEnv("smtp.port", "SMTP_PORT")
+	viper.BindEnv("smtp.secure", "SMTP_SECURE")
+	viper.BindEnv("smtp.identity", "SMTP_IDENTITY")
+	viper.BindEnv("smtp.user", "SMTP_USER")
+	viper.BindEnv("smtp.pass", "SMTP_PASS")
+	viper.BindEnv("smtp.sender", "SMTP_SENDER")
+
+	viper.BindEnv("config.avatar_service", "CONFIG_AVATAR_SERVICE")
+	viper.BindEnv("config.toast_timeout", "CONFIG_TOAST_TIMEOUT")
+	viper.BindEnv("config.allow_guests", "CONFIG_ALLOW_GUESTS")
+	viper.BindEnv("config.allow_registration", "CONFIG_ALLOW_REGISTRATION")
+	viper.BindEnv("config.default_locale", "CONFIG_DEFAULT_LOCALE")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			log.Fatal(err)
+		}
+	}
+}

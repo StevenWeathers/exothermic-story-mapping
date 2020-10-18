@@ -3,8 +3,11 @@
 
     import PageLayout from '../components/PageLayout.svelte'
     import SolidButton from '../components/SolidButton.svelte'
+    import UserAvatar from '../components/UserAvatar.svelte'
+    import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
+    import { appRoutes } from '../config'
 
     export let xfetch
     export let router
@@ -16,6 +19,36 @@
     let updatePassword = false
     let userPassword1 = ''
     let userPassword2 = ''
+
+    const avatarService = appConfig.AvatarService
+    let avatars
+
+    if (avatarService == 'dicebear') {
+        avatars = [
+            'male',
+            'female',
+            'human',
+            'identicon',
+            'bottts',
+            'avataaars',
+            'jdenticon',
+            'gridy',
+            'code',
+        ]
+    } else if (avatarService == 'gravatar') {
+        avatars = [
+            'mp',
+            'identicon',
+            'monsterid',
+            'wavatar',
+            'retro',
+            'robohash',
+        ]
+    } else if (avatarService == 'robohash') {
+        avatars = ['set1', 'set2', 'set3', 'set4']
+    } else if (avatarService == 'govatar') {
+        avatars = ['male', 'female']
+    }
 
     function toggleUpdatePassword() {
         updatePassword = !updatePassword
@@ -40,6 +73,7 @@
         e.preventDefault()
         const body = {
             userName: userProfile.name,
+            UserAvatar: userProfile.avatar,
         }
         const validName = validateName(body.userName)
 
@@ -58,6 +92,7 @@
                         name: userProfile.name,
                         email: userProfile.email,
                         type: userProfile.type,
+                        avatar: userProfile.avatar,
                     })
 
                     notifications.success('Profile updated.', 1500)
@@ -105,12 +140,15 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route('/register')
+            router.route(appRoutes.register)
         }
     })
 
     $: updateDisabled = userProfile.name === ''
-    $: updatePasswordDisabled = userPassword1 === '' || userPassword2 === ''
+    $: updatePasswordDisabled =
+        userPassword1 === '' ||
+        userPassword2 === '' ||
+        appConfig.authMethod === 'ldap'
 </script>
 
 <PageLayout>
@@ -171,6 +209,53 @@
                             type="email"
                             disabled />
                     </div>
+
+                    {#if avatarService == 'dicebear' || avatarService == 'gravatar' || avatarService == 'robohash' || avatarService == 'govatar'}
+                        <div class="mb-4">
+                            <label
+                                class="block text-gray-700 text-sm font-bold
+                                mb-2"
+                                for="yourAvatar">
+                                Avatar
+                            </label>
+                            <div class="flex">
+                                <div class="md:w-2/3 lg:w-3/4">
+                                    <div class="relative">
+                                        <select
+                                            bind:value="{userProfile.avatar}"
+                                            class="block appearance-none w-full
+                                            border-2 border-gray-400
+                                            text-gray-700 py-3 px-4 pr-8 rounded
+                                            leading-tight focus:outline-none
+                                            focus:border-purple-500"
+                                            id="yourAvatar"
+                                            name="yourAvatar">
+                                            {#each avatars as item}
+                                                <option value="{item}">
+                                                    {item}
+                                                </option>
+                                            {/each}
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute
+                                            inset-y-0 right-0 flex items-center
+                                            px-2 text-gray-700">
+                                            <DownCarrotIcon />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="md:w-1/3 lg:w-1/4 ml-1">
+                                    <span class="float-right">
+                                        <UserAvatar
+                                            userId="{userProfile.id}"
+                                            avatar="{userProfile.avatar}"
+                                            {avatarService}
+                                            width="40" />
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    {/if}
 
                     <div>
                         <div class="text-right">

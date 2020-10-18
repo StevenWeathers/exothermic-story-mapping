@@ -1,5 +1,6 @@
 <script>
     import CheckIcon from '../components/icons/CheckIcon.svelte'
+    import { appRoutes } from '../config'
 
     import { user } from '../stores.js'
 </script>
@@ -38,7 +39,7 @@
                         hover:bg-transparent hover:text-white font-semibold
                         text-exo-red py-4 px-10 border hover:border-white
                         border-transparent rounded"
-                        href="{$user.id ? '/storyboards' : '/register'}">
+                        href="{$user.id ? appRoutes.storyboards : appRoutes.register}">
                         Create a Storyboard
                     </a>
                 </div>

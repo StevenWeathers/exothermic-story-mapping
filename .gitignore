@@ -18,7 +18,7 @@ release/
 # how static assets get bundled
 *-packr.go
 packrd/
-pkged.go
+pkged*.go
 # *nix compiled binary
 exothermic
 # docker volumes
@@ -44,3 +44,6 @@ yarn-error.log*
 
 # Optional eslint cache
 .eslintcache
+
+# local config
+config.yaml

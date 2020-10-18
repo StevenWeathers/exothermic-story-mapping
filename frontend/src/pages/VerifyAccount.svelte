@@ -1,7 +1,5 @@
 <script>
     import PageLayout from '../components/PageLayout.svelte'
-    import SolidButton from '../components/SolidButton.svelte'
-    import { user } from '../stores.js'
 
     export let xfetch
     export let eventTag

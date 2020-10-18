@@ -1,6 +1,7 @@
 <script>
     import PageLayout from '../components/PageLayout.svelte'
     import SolidButton from '../components/SolidButton.svelte'
+    import { appRoutes } from '../config'
     import { user } from '../stores.js'
 
     export let xfetch
@@ -32,7 +33,7 @@
             xfetch('/api/auth/reset-password', { body })
                 .then(function() {
                     eventTag('reset_password', 'engagement', 'success', () => {
-                        router.route('/login', true)
+                        router.route(appRoutes.login, true)
                     })
                 })
                 .catch(function(error) {

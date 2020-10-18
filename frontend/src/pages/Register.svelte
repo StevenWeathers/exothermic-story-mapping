@@ -1,8 +1,10 @@
 <script>
     import PageLayout from '../components/PageLayout.svelte'
     import SolidButton from '../components/SolidButton.svelte'
+    import UserRegisterForm from '../components/UserRegisterForm.svelte'
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
+    import { appRoutes } from '../config'
 
     export let xfetch
     export let router
@@ -10,11 +12,8 @@
     export let notifications
     export let storyboardId
 
-    const nameMin = 1
-    const nameMax = 64
-    const passMin = 6
-    const passMax = 72
-    const emailMax = 320
+    const guestsAllowed = appConfig.AllowGuests
+    const registrationAllowed = appConfig.AllowRegistration
 
     let userName = $user.name || ''
     let userEmail = ''
@@ -22,8 +21,8 @@
     let userPassword2 = ''
 
     $: targetPage = storyboardId
-        ? `/storyboard/${storyboardId}`
-        : '/storyboards'
+        ? `${appRoutes.storyboard}/${storyboardId}`
+        : appRoutes.storyboards
 
     function createUserGuest(e) {
         e.preventDefault()
@@ -113,11 +112,6 @@
     }
 
     $: registerDisabled = userName === ''
-    $: createDisabled =
-        userName === '' ||
-        userEmail === '' ||
-        userPassword1 === '' ||
-        userPassword2 === ''
 </script>
 
 <PageLayout>
@@ -127,7 +121,7 @@
         </h1>
     </div>
     <div class="flex flex-wrap">
-        {#if !$user.id}
+        {#if !$user.id && guestsAllowed && registrationAllowed}
             <div class="w-full md:w-1/2 px-4">
                 <form
                     on:submit="{createUserGuest}"
@@ -169,101 +163,30 @@
             </div>
         {/if}
 
-        <div class="w-full md:w-1/2 px-4">
-            <form
-                on:submit="{createUserRegistered}"
-                class="bg-white shadow-lg rounded p-4 md:p-6 mb-4"
-                name="createAccount">
+        {#if registrationAllowed}
+            <div class="w-full md:w-1/2 px-4">
+                <div class="bg-white shadow-lg rounded p-4 md:p-6 mb-4">
+                    <h2
+                        class="font-bold text-xl md:text-2xl mb-2 md:mb-6
+                        md:leading-tight text-center">
+                        Create an Account
+                        <span class="text-gray-500">(optional)</span>
+                    </h2>
+
+                    <UserRegisterForm
+                        guestUsersName="{userName}"
+                        handleSubmit="{createUserRegistered}"
+                        notifications />
+                </div>
+            </div>
+        {:else}
+            <div class="w-full md:w-1/2 px-4">
                 <h2
-                    class="font-bold text-xl md:text-2xl mb-2 md:mb-6
-                    md:leading-tight text-center">
-                    Create an Account
-                    <span class="text-gray-500">(optional)</span>
+                    class="font-bold text-2xl md:text-3xl md:leading-tight
+                    text-center">
+                    Registration is disabled.
                 </h2>
-
-                <div class="mb-4">
-                    <label
-                        class="block text-gray-700 text-sm font-bold mb-2"
-                        for="yourName2">
-                        Name
-                    </label>
-                    <input
-                        bind:value="{userName}"
-                        placeholder="Enter your name"
-                        class="bg-gray-200 border-gray-200 border-2
-                        appearance-none rounded w-full py-2 px-3 text-gray-700
-                        leading-tight focus:outline-none focus:bg-white
-                        focus:border-orange-500"
-                        id="yourName2"
-                        name="yourName2"
-                        required />
-                </div>
-
-                <div class="mb-4">
-                    <label
-                        class="block text-gray-700 text-sm font-bold mb-2"
-                        for="yourEmail">
-                        Email
-                    </label>
-                    <input
-                        bind:value="{userEmail}"
-                        placeholder="Enter your email"
-                        class="bg-gray-200 border-gray-200 border-2
-                        appearance-none rounded w-full py-2 px-3 text-gray-700
-                        leading-tight focus:outline-none focus:bg-white
-                        focus:border-orange-500"
-                        id="yourEmail"
-                        name="yourEmail"
-                        type="email"
-                        required />
-                </div>
-
-                <div class="mb-4">
-                    <label
-                        class="block text-gray-700 text-sm font-bold mb-2"
-                        for="yourPassword1">
-                        Password
-                    </label>
-                    <input
-                        bind:value="{userPassword1}"
-                        placeholder="Enter a password"
-                        class="bg-gray-200 border-gray-200 border-2
-                        appearance-none rounded w-full py-2 px-3 text-gray-700
-                        leading-tight focus:outline-none focus:bg-white
-                        focus:border-orange-500"
-                        id="yourPassword1"
-                        name="yourPassword1"
-                        type="password"
-                        required />
-                </div>
-
-                <div class="mb-4">
-                    <label
-                        class="block text-gray-700 text-sm font-bold mb-2"
-                        for="yourPassword2">
-                        Confirm Password
-                    </label>
-                    <input
-                        bind:value="{userPassword2}"
-                        placeholder="Confirm your password"
-                        class="bg-gray-200 border-gray-200 border-2
-                        appearance-none rounded w-full py-2 px-3 text-gray-700
-                        leading-tight focus:outline-none focus:bg-white
-                        focus:border-orange-500"
-                        id="yourPassword2"
-                        name="yourPassword2"
-                        type="password"
-                        required />
-                </div>
-
-                <div>
-                    <div class="text-right">
-                        <SolidButton type="submit" disabled="{createDisabled}">
-                            Create
-                        </SolidButton>
-                    </div>
-                </div>
-            </form>
-        </div>
+            </div>
+        {/if}
     </div>
 </PageLayout>

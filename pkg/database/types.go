@@ -9,6 +9,7 @@ type Config struct {
 	user     string
 	password string
 	dbname   string
+	sslmode  string
 }
 
 // Database contains all the methods to interact with DB
@@ -60,9 +61,10 @@ type StoryboardStory struct {
 
 // User aka user
 type User struct {
-	UserID    string `json:"id"`
-	UserName  string `json:"name"`
-	UserEmail string `json:"email"`
-	UserType  string `json:"type"`
-	Verified  bool   `json:"verified"`
+	UserID     string `json:"id"`
+	UserName   string `json:"name"`
+	UserEmail  string `json:"email"`
+	UserAvatar string `json:"avatar"`
+	UserType   string `json:"type"`
+	Verified   bool   `json:"verified"`
 }

@@ -7,6 +7,7 @@
     import SolidButton from '../components/SolidButton.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import { user } from '../stores.js'
+    import { appRoutes } from '../config'
 
     export let xfetch
     export let notifications
@@ -27,7 +28,7 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route('/register')
+            router.route(appRoutes.register)
         }
     })
 </script>
@@ -51,7 +52,8 @@
                             </div>
                         </div>
                         <div class="w-full md:w-1/2 md:mb-0 md:text-right">
-                            <HollowButton href="/storyboard/{storyboard.id}">
+                            <HollowButton
+                                href="{appRoutes.storyboard}/{storyboard.id}">
                                 Join Storyboard
                             </HollowButton>
                         </div>

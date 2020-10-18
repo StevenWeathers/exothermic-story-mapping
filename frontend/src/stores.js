@@ -1,27 +1,34 @@
 import { writable } from 'svelte/store'
 import Cookies from 'js-cookie'
 
+const { PathPrefix, CookieName } = appConfig
+const cookiePath = `${PathPrefix}/`
+
 function initUser() {
-    const { subscribe, set, update } = writable(Cookies.getJSON('user') || {})
+    const { subscribe, set, update } = writable(
+        Cookies.getJSON(CookieName) || {},
+    )
 
     return {
         subscribe,
         create: user => {
-            Cookies.set('user', user, {
+            Cookies.set(CookieName, user, {
                 expires: 365,
                 SameSite: 'strict',
+                path: cookiePath,
             })
             set(user)
         },
         update: user => {
-            Cookies.set('user', user, {
+            Cookies.set(CookieName, user, {
                 expires: 365,
                 SameSite: 'strict',
+                path: cookiePath,
             })
             update(w => (w = user))
         },
         delete: () => {
-            Cookies.remove('user')
+            Cookies.remove(CookieName, { path: cookiePath })
             set({})
         },
     }

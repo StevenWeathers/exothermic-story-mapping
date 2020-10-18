@@ -3,7 +3,6 @@
     import Sockette from 'sockette'
     import { onMount, onDestroy } from 'svelte'
 
-    import guid from '../generateGuid.js'
     import AddGoal from '../components/AddGoal.svelte'
     import PageLayout from '../components/PageLayout.svelte'
     import UserCard from '../components/UserCard.svelte'
@@ -14,7 +13,7 @@
     import TrashIcon from '../components/icons/TrashIcon.svelte'
     import DropperIcon from '../components/icons/DropperIcon.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
-
+    import { appRoutes, PathPrefix } from '../config'
     import { user } from '../stores.js'
 
     const cardColors = [
@@ -201,7 +200,7 @@
                 break
             case 'storyboard_conceded':
                 // storyboard over, goodbye.
-                router.route('/storyboards')
+                router.route(appRoutes.storyboards)
                 break
             default:
                 break
@@ -209,7 +208,7 @@
     }
 
     const ws = new Sockette(
-        `${socketExtension}://${window.location.host}/api/arena/${storyboardId}`,
+        `${socketExtension}://${window.location.host}${PathPrefix}/api/arena/${storyboardId}`,
         {
             timeout: 2e3,
             maxAttempts: 15,
@@ -221,12 +220,12 @@
             onclose: e => {
                 if (e.code === 4004) {
                     eventTag('not_found', 'storyboard', '', () => {
-                        router.route('/storyboards')
+                        router.route(appRoutes.storyboards)
                     })
                 } else if (e.code === 4001) {
                     eventTag('socket_unauthorized', 'storyboard', '', () => {
                         user.delete()
-                        router.route(`/register/${storyboardId}`)
+                        router.route(`${appRoutes.register}/${storyboardId}`)
                     })
                 } else {
                     socketReconnecting = true
@@ -309,7 +308,7 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route(`/register/${storyboardId}`)
+            router.route(`${appRoutes.register}/${storyboardId}`)
         }
     })
 </script>

@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/lib/pq" // necessary for postgres
 	"github.com/markbates/pkger"
+	"github.com/spf13/viper"
 )
 
 // GetEnv gets environment variable matching key string
@@ -59,11 +60,12 @@ func New(AdminEmail string) *Database {
 	var d = &Database{
 		// read environment variables and sets up mailserver configuration values
 		config: &Config{
-			host:     GetEnv("DB_HOST", "db"),
-			port:     GetIntEnv("DB_PORT", 5432),
-			user:     GetEnv("DB_USER", "thor"),
-			password: GetEnv("DB_PASS", "odinson"),
-			dbname:   GetEnv("DB_NAME", "exothermic"),
+			host:     viper.GetString("db.host"),
+			port:     viper.GetInt("db.port"),
+			user:     viper.GetString("db.user"),
+			password: viper.GetString("db.pass"),
+			dbname:   viper.GetString("db.name"),
+			sslmode:  viper.GetString("db.sslmode"),
 		},
 	}
 
@@ -81,12 +83,13 @@ func New(AdminEmail string) *Database {
 	migrationSQL := string(sqlContent)
 
 	psqlInfo := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		d.config.host,
 		d.config.port,
 		d.config.user,
 		d.config.password,
 		d.config.dbname,
+		d.config.sslmode,
 	)
 
 	pdb, err := sql.Open("postgres", psqlInfo)

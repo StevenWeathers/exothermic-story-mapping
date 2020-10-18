@@ -1,0 +1,10 @@
+{
+    "appName": "Exothermic",
+    "appVersion": "Version {version}",
+    "avatarAltText": "Placeholder Avatar",
+    "footer": {
+        "authoredBy": "by {authorOpen}Steven Weathers{authorClose}.",
+        "license": "The source code is licensed {licenseOpen}Apache 2.0{licenseClose}.",
+        "poweredBy": "Powered by {svelteOpen}Svelte{svelteClose} and {goOpen}Go{goClose}"
+    }
+}

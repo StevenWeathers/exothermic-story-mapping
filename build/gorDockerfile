@@ -1,0 +1,10 @@
+FROM alpine:3.7
+RUN adduser -D -g '' appuser
+
+FROM scratch
+COPY exothermic-story-mapping /
+
+COPY --from=0 /etc/passwd /etc/passwd
+USER appuser
+
+ENTRYPOINT ["/exothermic-story-mapping"]

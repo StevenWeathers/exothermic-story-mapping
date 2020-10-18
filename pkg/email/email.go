@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/matcornic/hermes/v2"
+	"github.com/spf13/viper"
 )
 
 // smtpServer data to smtp server
@@ -31,7 +32,7 @@ var smtpAuth smtp.Auth
 
 // Config contains all the mailserver values
 type Config struct {
-	AppDomain    string
+	AppURL       string
 	SenderName   string
 	smtpHost     string
 	smtpPort     string
@@ -89,19 +90,20 @@ func GetBoolEnv(key string, fallback bool) bool {
 }
 
 // New creates a new instance of Email
-func New(AppDomain string) *Email {
+func New(AppDomain string, PathPrefix string) *Email {
+	var AppURL string = "https://" + AppDomain + PathPrefix + "/"
 	var m = &Email{
 		// read environment variables and sets up mailserver configuration values
 		config: &Config{
-			AppDomain:    AppDomain,
+			AppURL:       AppURL,
 			SenderName:   "Exothermic",
-			smtpHost:     GetEnv("SMTP_HOST", "localhost"),
-			smtpPort:     GetEnv("SMTP_PORT", "25"),
-			smtpSecure:   GetBoolEnv("SMTP_SECURE", true),
-			smtpIdentity: GetEnv("SMTP_IDENTITY", ""),
-			smtpUser:     GetEnv("SMTP_USER", ""),
-			smtpPass:     GetEnv("SMTP_PASS", ""),
-			smtpSender:   GetEnv("SMTP_SENDER", "no-reply@exothermic.dev"),
+			smtpHost:     viper.GetString("smtp.host"),
+			smtpPort:     viper.GetString("smtp.port"),
+			smtpSecure:   viper.GetBool("smtp.secure"),
+			smtpIdentity: viper.GetString("smtp.identity"),
+			smtpUser:     viper.GetString("smtp.user"),
+			smtpPass:     viper.GetString("smtp.pass"),
+			smtpSender:   viper.GetString("smtp.sender"),
 		},
 	}
 
@@ -132,8 +134,8 @@ func (m *Email) generateBody(Body hermes.Body) (emailBody string, generateErr er
 	hms := hermes.Hermes{
 		Product: hermes.Product{
 			Name:      "Exothermic",
-			Link:      "https://" + m.config.AppDomain + "/",
-			Logo:      "https://" + m.config.AppDomain + "/img/exothermic-logo.png",
+			Link:      m.config.AppURL,
+			Logo:      m.config.AppURL + "img/exothermic-logo.png",
 			Copyright: "Copyright © " + year + " Exothermic. All rights reserved.",
 		},
 	}

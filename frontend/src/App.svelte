@@ -1,10 +1,13 @@
 <script>
     import Navaid from 'navaid'
     import { onDestroy } from 'svelte'
+
+    import { _, locale, setupI18n, isLocaleLoaded } from './i18n'
+    import { appRoutes } from './config'
     import Notifications from './components/Notifications.svelte'
     import UserIcon from './components/icons/UserIcon.svelte'
     import HollowButton from './components/HollowButton.svelte'
-
+    import LocaleSwitcher from './components/LocaleSwitcher.svelte'
     import Landing from './pages/Landing.svelte'
     import Storyboards from './pages/Storyboards.svelte'
     import Storyboard from './pages/Storyboard.svelte'
@@ -18,6 +21,9 @@
     import eventTag from './eventTag.js'
     import apiclient from './apiclient.js'
 
+    setupI18n()
+
+    const { AllowRegistration, AppVersion, PathPrefix } = appConfig
     const footerLinkClasses =
         'no-underline text-orange-500 hover:text-orange-800'
 
@@ -35,55 +41,55 @@
     }
 
     const router = Navaid('/')
-        .on('/', () => {
+        .on(appRoutes.landing, () => {
             currentPage = {
                 route: Landing,
                 params: {},
             }
         })
-        .on('/register/:storyboardId?', params => {
+        .on(`${appRoutes.register}/:storyboardId?`, params => {
             currentPage = {
                 route: Register,
                 params,
             }
         })
-        .on('/login/:storyboardId?', params => {
+        .on(`${appRoutes.login}/:storyboardId?`, params => {
             currentPage = {
                 route: Login,
                 params,
             }
         })
-        .on('/reset-password/:resetId', params => {
+        .on(`${appRoutes.resetPwd}/:resetId`, params => {
             currentPage = {
                 route: ResetPassword,
                 params,
             }
         })
-        .on('/verify-account/:verifyId', params => {
+        .on(`${appRoutes.verifyAct}/:verifyId`, params => {
             currentPage = {
                 route: VerifyAccount,
                 params,
             }
         })
-        .on('/user-profile', params => {
+        .on(appRoutes.profile, params => {
             currentPage = {
                 route: UserProfile,
                 params,
             }
         })
-        .on('/storyboards', () => {
+        .on(appRoutes.storyboards, () => {
             currentPage = {
                 route: Storyboards,
                 params: {},
             }
         })
-        .on('/storyboard/:storyboardId', params => {
+        .on(`${appRoutes.storyboard}/:storyboardId`, params => {
             currentPage = {
                 route: Storyboard,
                 params,
             }
         })
-        .on('/admin', () => {
+        .on(appRoutes.admin, () => {
             currentPage = {
                 route: Admin,
                 params: {},
@@ -96,7 +102,7 @@
     function handle401() {
         eventTag('session_expired', 'engagement', 'unauthorized', () => {
             user.delete()
-            router.route('/login')
+            router.route(appRoutes.login)
         })
     }
 
@@ -105,7 +111,7 @@
             .then(function() {
                 eventTag('logout', 'engagement', 'success', () => {
                     user.delete()
-                    router.route('/', true)
+                    router.route(appRoutes.landing, true)
                 })
             })
             .catch(function(error) {
@@ -142,91 +148,110 @@
 
 <Notifications bind:this="{notifications}" />
 
-<nav
-    class="flex items-center justify-between flex-wrap bg-exo-grey px-6 py-2"
-    role="navigation"
-    aria-label="main navigation">
-    <div class="flex items-center flex-shrink-0 mr-6">
-        <a href="/">
-            <img
-                src="/img/exothermic-logo.png"
-                alt="Exothermic"
-                class="nav-logo" />
-        </a>
-    </div>
-    {#if activeUser.name}
+{#if $isLocaleLoaded}
+    <nav
+        class="flex items-center justify-between flex-wrap bg-exo-grey px-6 py-2"
+        role="navigation"
+        aria-label="main navigation">
+        <div class="flex items-center flex-shrink-0 mr-6">
+            <a href="{appRoutes.landing}">
+                <img
+                    src="{PathPrefix}/img/exothermic-logo.png"
+                    alt="Exothermic"
+                    class="nav-logo" />
+            </a>
+        </div>
         <div class="text-right mt-4 md:mt-0">
-            <span class="font-bold mr-2 text-xl text-white">
-                <UserIcon />
-                <a href="/user-profile">{activeUser.name}</a>
-            </span>
-            <HollowButton
-                color="orange"
-                href="/storyboards"
-                additionalClasses="mr-2">
-                My Storyboards
-            </HollowButton>
-            {#if !activeUser.type || activeUser.type === 'GUEST'}
+            {#if activeUser.name}
+                <span class="font-bold mr-2 text-xl text-white">
+                    <UserIcon />
+                    <a href="{appRoutes.profile}">{activeUser.name}</a>
+                </span>
                 <HollowButton
                     color="orange"
-                    href="/register"
+                    href="{appRoutes.storyboards}"
                     additionalClasses="mr-2">
-                    Create Account
+                    My Storyboards
                 </HollowButton>
-                <HollowButton href="/login">Login</HollowButton>
-            {:else}
-                {#if activeUser.type === 'ADMIN'}
-                    <HollowButton
-                        color="purple"
-                        href="/admin"
-                        additionalClasses="mr-2">
-                        Admin
+                {#if !activeUser.type || activeUser.type === 'GUEST'}
+                    {#if AllowRegistration}
+                        <HollowButton
+                            color="orange"
+                            href="{appRoutes.register}"
+                            additionalClasses="mr-2">
+                            Create Account
+                        </HollowButton>
+                    {/if}
+                    <HollowButton href="{appRoutes.login}">Login</HollowButton>
+                {:else}
+                    {#if activeUser.type === 'ADMIN'}
+                        <HollowButton
+                            color="purple"
+                            href="{appRoutes.admin}"
+                            additionalClasses="mr-2">
+                            Admin
+                        </HollowButton>
+                    {/if}
+                    <HollowButton color="red" onClick="{logoutUser}">
+                        Logout
                     </HollowButton>
                 {/if}
-                <HollowButton color="red" onClick="{logoutUser}">
-                    Logout
-                </HollowButton>
+            {:else}
+                {#if AllowRegistration}
+                    <HollowButton
+                        color="orange"
+                        href="{appRoutes.register}"
+                        additionalClasses="mr-2">
+                        Create Account
+                    </HollowButton>
+                {/if}
+                <HollowButton href="{appRoutes.login}">Login</HollowButton>
             {/if}
+            <LocaleSwitcher
+                selectedLocale="{$locale}"
+                on:locale-changed="{e => setupI18n({
+                        withLocale: e.detail,
+                    })}" />
         </div>
-    {:else}
-        <div class="text-right mt-4 md:mt-0">
-            <HollowButton
-                color="orange"
-                href="/register"
-                additionalClasses="mr-2">
-                Create Account
-            </HollowButton>
-            <HollowButton href="/login">Login</HollowButton>
+    </nav>
+
+    <svelte:component
+        this="{currentPage.route}"
+        {...currentPage.params}
+        {notifications}
+        {router}
+        {eventTag}
+        {xfetch} />
+
+    <footer class="p-6 text-center">
+        <a
+            href="https://github.com/StevenWeathers/exothermic-story-mapping"
+            class="{footerLinkClasses}">
+            {$_('appName')}
+        </a>
+        {@html $_('footer.authoredBy', {
+            values: {
+                authorOpen: `<a href="http://stevenweathers.com" class="${footerLinkClasses}">`,
+                authorClose: `</a>`,
+            },
+        })}
+        {@html $_('footer.license', {
+            values: {
+                licenseOpen: `<a href="http://www.apache.org/licenses/" class="${footerLinkClasses}">`,
+                licenseClose: `</a>`,
+            },
+        })}
+        <br />
+        {@html $_('footer.poweredBy', {
+            values: {
+                svelteOpen: `<a href="https://svelte.dev/" class="${footerLinkClasses}">`,
+                svelteClose: `</a>`,
+                goOpen: `<a href="https://golang.org/" class="${footerLinkClasses}">`,
+                goClose: `</a>`,
+            },
+        })}
+        <div class="text-sm text-gray-500">
+            {$_('appVersion', { values: { version: AppVersion } })}
         </div>
-    {/if}
-</nav>
-
-<svelte:component
-    this="{currentPage.route}"
-    {...currentPage.params}
-    {notifications}
-    {router}
-    {eventTag}
-    {xfetch} />
-
-<footer class="p-6 text-center">
-    <a
-        href="https://github.com/StevenWeathers/exothermic-story-mapping"
-        class="{footerLinkClasses}">
-        Exothermic
-    </a>
-    by
-    <a href="http://stevenweathers.com" class="{footerLinkClasses}">
-        Steven Weathers
-    </a>
-    . The source code is licensed
-    <a href="http://www.apache.org/licenses/" class="{footerLinkClasses}">
-        Apache 2.0
-    </a>
-    .
-    <br />
-    Powered by
-    <a href="https://svelte.dev/" class="{footerLinkClasses}">Svelte</a>
-    and
-    <a href="https://golang.org/" class="{footerLinkClasses}">Go</a>
-</footer>
+    </footer>
+{/if}

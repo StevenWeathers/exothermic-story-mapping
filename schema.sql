@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS user_verify (
 -- Table Alterations
 --
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar VARCHAR(128) DEFAULT 'identicon';
 
 --
 -- Stored Procedures

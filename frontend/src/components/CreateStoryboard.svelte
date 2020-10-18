@@ -1,10 +1,9 @@
 <script>
     import { onMount } from 'svelte'
 
-    import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import SolidButton from '../components/SolidButton.svelte'
-    import HollowButton from '../components/HollowButton.svelte'
     import { user } from '../stores.js'
+    import { appRoutes } from '../config'
 
     export let xfetch
     export let notifications
@@ -23,7 +22,7 @@
             .then(res => res.json())
             .then(function(storyboard) {
                 eventTag('create_storyboard', 'engagement', 'success', () => {
-                    router.route(`/storyboard/${storyboard.id}`)
+                    router.route(`${appRoutes.storyboard}/${storyboard.id}`)
                 })
             })
             .catch(function(error) {
@@ -34,7 +33,7 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route('/register')
+            router.route(appRoutes.register)
         }
     })
 </script>

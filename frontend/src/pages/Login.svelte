@@ -2,12 +2,15 @@
     import PageLayout from '../components/PageLayout.svelte'
     import SolidButton from '../components/SolidButton.svelte'
     import { user } from '../stores.js'
+    import { appRoutes } from '../config'
 
     export let xfetch
     export let router
     export let eventTag
     export let notifications
     export let storyboardId
+
+    const authMethod = appConfig.AuthMethod
 
     let userEmail = ''
     let userPassword = ''
@@ -16,8 +19,8 @@
     let forgotPassword = false
 
     $: targetPage = storyboardId
-        ? `/storyboard/${storyboardId}`
-        : '/storyboards'
+        ? `${appRoutes.storyboard}/${storyboardId}`
+        : appRoutes.storyboards
 
     function authUser(e) {
         e.preventDefault()
@@ -138,13 +141,15 @@
                     </div>
 
                     <div class="text-right">
-                        <button
-                            type="button"
-                            class="inline-block align-baseline font-bold text-sm
-                            text-blue-500 hover:text-blue-800 mr-4"
-                            on:click="{toggleForgotPassword}">
-                            Forgot Password?
-                        </button>
+                        {#if authMethod === 'normal'}
+                            <button
+                                type="button"
+                                class="inline-block align-baseline font-bold
+                                text-sm text-blue-500 hover:text-blue-800 mr-4"
+                                on:click="{toggleForgotPassword}">
+                                Forgot Password?
+                            </button>
+                        {/if}
                         <SolidButton type="submit" disabled="{loginDisabled}">
                             Login
                         </SolidButton>
