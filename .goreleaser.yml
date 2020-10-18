@@ -11,7 +11,7 @@ before:
 builds:
 - env:
   - CGO_ENABLED=0
-  dockers:
+dockers:
     - 
       dockerfile: "build/gorDockerfile"
       binaries:
