@@ -1,5 +1,5 @@
 <script>
-    import { PathPrefix } from '../config'
+    import { appRoutes, PathPrefix } from '../config'
     import SolidButton from './SolidButton.svelte'
 
     export let hostname = ''
@@ -21,7 +21,7 @@
         appearance-none text-gray-700 focus:outline-none focus:bg-white
         focus:border-orange-500 "
         type="text"
-        value="{hostname}{PathPrefix}/storyboard/{storyboardId}"
+        value="{hostname}{PathPrefix}{appRoutes.storyboard}/{storyboardId}"
         id="StoryboardLink"
         readonly />
     <div class="flex -mr-px">
