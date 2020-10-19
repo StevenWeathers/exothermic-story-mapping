@@ -111,8 +111,8 @@ The following configuration options exists:
 | `http.cookie_hashkey`      | COOKIE_HASHKEY       | Secret used to make secure cookies secure. | pyrom-maniac |
 | `http.port`                | PORT                 | Which port to listen for HTTP connections. | 8080 |
 | `http.secure_cookie`       | COOKIE_SECURE        | Use secure cookies or not.                 | true |
-| `http.backend_cookie_name` | BACKEND_COOKIE_NAME  | The name of the backend cookie utilized for actual auth/validation | warriorId |
-| `http.frontend_cookie_name`| FRONTEND_COOKIE_NAME | The name of the cookie utilized by the UI (purely for convenience not auth) | warrior |
+| `http.backend_cookie_name` | BACKEND_COOKIE_NAME  | The name of the backend cookie utilized for actual auth/validation | userId |
+| `http.frontend_cookie_name`| FRONTEND_COOKIE_NAME | The name of the cookie utilized by the UI (purely for convenience not auth) | user |
 | `http.domain`              | APP_DOMAIN           | The domain/base URL for this instance of Thunderdome.  Used for creating URLs in emails. | exothermic.dev |
 | `http.path_prefix`         | PATH_PREFIX          | Prefix added to all application urls for shared domain use, in format of `/{prefix}` e.g. `/exothermic` | |
 | `analytics.enabled`        | ANALYTICS_ENABLED    | Enable/disable google analytics.           | true |

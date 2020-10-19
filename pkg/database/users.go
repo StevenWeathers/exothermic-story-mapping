@@ -58,7 +58,8 @@ func (d *Database) GetRegisteredUsers() []*User {
 				&userEmail,
 				&w.UserType,
 				&w.UserAvatar,
-				&w.Verified); err != nil {
+				&w.Verified,
+			); err != nil {
 				log.Println(err)
 			} else {
 				w.UserEmail = userEmail.String

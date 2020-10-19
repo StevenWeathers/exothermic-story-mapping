@@ -101,13 +101,13 @@ func (s *server) clearUserCookies(w http.ResponseWriter) {
 	feCookie := &http.Cookie{
 		Name:   s.config.FrontendCookieName,
 		Value:  "",
-		Path:   "/",
+		Path:   s.config.PathPrefix + "/",
 		MaxAge: -1,
 	}
 	beCookie := &http.Cookie{
 		Name:     s.config.SecureCookieName,
 		Value:    "",
-		Path:     "/",
+		Path:     s.config.PathPrefix + "/",
 		MaxAge:   -1,
 		HttpOnly: true,
 	}

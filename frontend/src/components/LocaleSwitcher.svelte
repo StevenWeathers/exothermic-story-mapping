@@ -29,8 +29,8 @@
             name="locale"
             on:change="{switchLocale}"
             value="{selectedLocale}"
-            class="block appearance-none w-full border-2 border-gray-400
-            text-gray-700 py-2 px-4 pr-8 rounded leading-tight
+            class="block appearance-none w-full border border-gray-400
+            bg-exo-grey text-white py-2 px-4 pr-8 rounded leading-tight
             focus:outline-none focus:border-purple-500">
             {#each supportedLocales as locale}
                 <option value="{locale.value}">{locale.name}</option>
@@ -38,7 +38,7 @@
         </select>
         <div
             class="pointer-events-none absolute inset-y-0 right-0 flex
-            items-center px-2 text-gray-700">
+            items-center px-2 text-white">
             <DownCarrotIcon />
         </div>
     </div>

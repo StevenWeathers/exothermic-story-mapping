@@ -61,34 +61,6 @@ func GetEnv(key string, fallback string) string {
 	return result
 }
 
-// GetIntEnv gets an environment variable and converts it to an int
-// and if it finds none uses fallback
-func GetIntEnv(key string, fallback int) int {
-	var intResult = fallback
-	var stringResult = os.Getenv(key)
-
-	if stringResult != "" {
-		v, _ := strconv.Atoi(stringResult)
-		intResult = v
-	}
-
-	return intResult
-}
-
-// GetBoolEnv gets an environment variable and converts it to a bool
-// and if it finds none uses fallback
-func GetBoolEnv(key string, fallback bool) bool {
-	var boolResult = fallback
-	var stringResult = os.Getenv(key)
-
-	if stringResult != "" {
-		b, _ := strconv.ParseBool(stringResult)
-		boolResult = b
-	}
-
-	return boolResult
-}
-
 // New creates a new instance of Email
 func New(AppDomain string, PathPrefix string) *Email {
 	var AppURL string = "https://" + AppDomain + PathPrefix + "/"
