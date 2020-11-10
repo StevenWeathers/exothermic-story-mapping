@@ -158,7 +158,7 @@ func (d *Database) AddUserToStoryboard(StoryboardID string, UserID string) ([]*S
 	if _, err := d.db.Exec(
 		`INSERT INTO storyboard_user (storyboard_id, user_id, active)
 		VALUES ($1, $2, true)
-		ON CONFLICT (storyboard_id, user_id) DO UPDATE SET active = true`,
+		ON CONFLICT (storyboard_id, user_id) DO UPDATE SET active = true, abandoned = false`,
 		StoryboardID,
 		UserID,
 	); err != nil {
@@ -185,6 +185,25 @@ func (d *Database) RetreatUser(StoryboardID string, UserID string) []*Storyboard
 	users := d.GetStoryboardUsers(StoryboardID)
 
 	return users
+}
+
+// AbandonStoryboard removes a user from the current storyboard by ID and sets abandoned true
+func (d *Database) AbandonStoryboard(StoryboardID string, UserID string) ([]*StoryboardUser, error) {
+	if _, err := d.db.Exec(
+		`UPDATE storyboard_user SET active = false, abandoned = true WHERE storyboard_id = $1 AND user_id = $2`, StoryboardID, UserID); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if _, err := d.db.Exec(
+		`UPDATE users SET last_active = NOW() WHERE id = $1`, UserID); err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	users := d.GetStoryboardUsers(StoryboardID)
+
+	return users, nil
 }
 
 // SetStoryboardOwner sets the ownerId for the storyboard

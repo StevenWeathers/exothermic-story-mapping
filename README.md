@@ -128,21 +128,20 @@ The following configuration options exists:
 | `smtp.secure`              | SMTP_SECURE          | Set to authenticate with the Smtp server.  | true |
 | `smtp.identity`            | SMTP_IDENTITY        | Smtp server authorization identity.  Usually unset. | |
 | `smtp.sender`              | SMTP_SENDER          | From address in emails sent by Thunderdome. | no-reply@exothermic.dev |
-| `config.avatar_service`    | CONFIG_AVATAR_SERVICE | Avatar service used, possible values see next paragraph | default |
+| `config.avatar_service`    | CONFIG_AVATAR_SERVICE | Avatar service used, possible values see next paragraph | goadorable |
 | `config.toast_timeout`     | CONFIG_TOAST_TIMEOUT | Number of milliseconds before notifications are hidden. | 1000 |
 | `config.allow_guests`     | CONFIG_ALLOW_GUESTS | Whether or not to allow guest (anonymous) users. | true |
 | `config.allow_registration`     | CONFIG_ALLOW_REGISTRATION | Whether or not to allow user registration (outside Admin). | true |
 | `config.default_locale`   | CONFIG_DEFAULT_LOCALE | The default locale (language) for the UI | en |
+| `config.allow_external_api`    | CONFIG_ALLOW_EXTERNAL_API | Whether or not to allow External API access | false |
 | `auth.method`              | AUTH_METHOD         | Choose `normal` or `ldap` as authentication method.  See separate section on LDAP configuration. | normal |
 
 ## Avatar Service configuration
 
-Use the name from table below to configure a service - if not set, `default` is used. Each service provides further options which then can be configured by a warrior on the profile page. Once a service is configured, drop downs with the different sprites become available. The table shows all supported services and their sprites. In all cases the same ID (`ead26688-5148-4f3c-a35d-1b0117b4f2a9`) has been used creating the avatars.
+Use the name from table below to configure a service - if not set, `goadorable` is used. Each service provides further options which then can be configured by a warrior on the profile page. Once a service is configured, drop downs with the different sprites become available. The table shows all supported services and their sprites. In all cases the same ID (`ead26688-5148-4f3c-a35d-1b0117b4f2a9`) has been used creating the avatars.
 
 | Name |           |           |           |           |           |           |           |           |           |
 | ---------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- |
-| `default`  |           |           |           |           |           |           |           |           |           |
-|            | ![image](https://api.adorable.io/avatars/48/ead26688-5148-4f3c-a35d-1b0117b4f2a9.png) |
 | `goadorable` (internal)  |           |           |           |           |           |           |           |           |           |
 |            | ![image](https://user-images.githubusercontent.com/846933/96212071-e4283d80-0f43-11eb-9f82-ff6c105f8b0a.png) |
 | `govatar` (internal) | male | female |  |  |

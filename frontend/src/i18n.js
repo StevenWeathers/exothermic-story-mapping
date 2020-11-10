@@ -12,7 +12,8 @@ import {
 
 import { locales, fallbackLocale, PathPrefix } from './config'
 
-const MESSAGE_FILE_URL_TEMPLATE = `${PathPrefix}/lang/{locale}.json`
+const { AppVersion } = appConfig
+const MESSAGE_FILE_URL_TEMPLATE = `${PathPrefix}/lang/{locale}.json?v=${AppVersion}`
 
 let _activeLocale
 

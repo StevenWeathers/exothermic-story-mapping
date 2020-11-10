@@ -60,6 +60,7 @@ func CreateSocketEvent(EventType string, EventValue string, EventUser string) []
 
 // readPump pumps messages from the websocket connection to the hub.
 func (s subscription) readPump(srv *server) {
+	var forceClosed bool
 	c := s.conn
 	defer func() {
 		StoryboardID := s.arena
@@ -73,7 +74,15 @@ func (s subscription) readPump(srv *server) {
 		h.broadcast <- m
 
 		h.unregister <- s
-		c.ws.Close()
+		if forceClosed {
+			cm := websocket.FormatCloseMessage(4002, "abandoned")
+			if err := c.ws.WriteControl(websocket.CloseMessage, cm, time.Now().Add(writeWait)); err != nil {
+				log.Printf("abandon error: %v", err)
+			}
+		}
+		if err := c.ws.Close(); err != nil {
+			log.Printf("close error: %v", err)
+		}
 	}()
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -234,12 +243,24 @@ func (s subscription) readPump(srv *server) {
 				break
 			}
 			msg = CreateSocketEvent("storyboard_conceded", "", "")
+		case "abandon_storyboard":
+			_, err := srv.database.AbandonStoryboard(storyboardID, userID)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			badEvent = true // don't want this event to cause write panic
+			forceClosed = true
 		default:
 		}
 
-		if badEvent != true {
+		if !badEvent {
 			m := message{msg, s.arena}
 			h.broadcast <- m
+		}
+
+		if forceClosed {
+			break
 		}
 	}
 }
@@ -279,7 +300,6 @@ func (s *subscription) writePump() {
 // serveWs handles websocket requests from the peer.
 func (s *server) serveWs() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var unauthorized = false
 		vars := mux.Vars(r)
 		storyboardID := vars["id"]
 
@@ -290,33 +310,46 @@ func (s *server) serveWs() http.HandlerFunc {
 			return
 		}
 
+		// make sure user cookies are valid
+		userID, cookieErr := s.validateUserCookie(w, r)
+		if cookieErr != nil {
+			cm := websocket.FormatCloseMessage(4001, "unauthorized")
+			if err := ws.WriteMessage(websocket.CloseMessage, cm); err != nil {
+				log.Printf("unauthorized close error: %v", err)
+			}
+			if err := ws.Close(); err != nil {
+				log.Printf("close error: %v", err)
+			}
+			return
+		}
+
 		// make sure storyboard is legit
 		b, storyboardErr := s.database.GetStoryboard(storyboardID)
 		if storyboardErr != nil {
-			ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4004, "battle not found"))
-			ws.Close()
+			cm := websocket.FormatCloseMessage(4004, "storyboard not found")
+			if err := ws.WriteMessage(websocket.CloseMessage, cm); err != nil {
+				log.Printf("not found close error: %v", err)
+			}
+			if err := ws.Close(); err != nil {
+				log.Printf("close error: %v", err)
+			}
 			return
 		}
 		storyboard, _ := json.Marshal(b)
 
-		// make sure user cookies are valid
-		userID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil {
-			unauthorized = true
-		} else {
-			// make sure user exists
-			_, userErr := s.database.GetStoryboardUser(storyboardID, userID)
+		// make sure user exists
+		_, userErr := s.database.GetStoryboardUser(storyboardID, userID)
 
-			if userErr != nil {
-				log.Println("error finding user : " + userErr.Error() + "\n")
-				s.clearUserCookies(w)
-				unauthorized = true
+		if userErr != nil {
+			log.Println("error finding user : " + userErr.Error() + "\n")
+			s.clearUserCookies(w)
+			cm := websocket.FormatCloseMessage(4001, "unauthorized")
+			if err := ws.WriteMessage(websocket.CloseMessage, cm); err != nil {
+				log.Printf("unauthorized close error: %v", err)
 			}
-		}
-
-		if unauthorized {
-			ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4001, "unauthorized"))
-			ws.Close()
+			if err := ws.Close(); err != nil {
+				log.Printf("close error: %v", err)
+			}
 			return
 		}
 
@@ -335,6 +368,6 @@ func (s *server) serveWs() http.HandlerFunc {
 		h.broadcast <- m
 
 		go ss.writePump()
-		ss.readPump(s)
+		go ss.readPump(s)
 	}
 }

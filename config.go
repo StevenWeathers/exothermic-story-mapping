@@ -38,11 +38,12 @@ func InitConfig() {
 	viper.SetDefault("smtp.secure", true)
 	viper.SetDefault("smtp.sender", "no-reply@exothermic.dev")
 
-	viper.SetDefault("config.avatar_service", "default")
+	viper.SetDefault("config.avatar_service", "goadorable")
 	viper.SetDefault("config.toast_timeout", 1000)
 	viper.SetDefault("config.allow_guests", true)
 	viper.SetDefault("config.allow_registration", true)
 	viper.SetDefault("config.default_locale", "en")
+	viper.SetDefault("config.allow_external_api", false)
 
 	viper.SetDefault("auth.method", "normal")
 	viper.SetDefault("auth.ldap.url", "")
@@ -86,6 +87,7 @@ func InitConfig() {
 	viper.BindEnv("config.allow_guests", "CONFIG_ALLOW_GUESTS")
 	viper.BindEnv("config.allow_registration", "CONFIG_ALLOW_REGISTRATION")
 	viper.BindEnv("config.default_locale", "CONFIG_DEFAULT_LOCALE")
+	viper.BindEnv("config.allow_external_api", "CONFIG_ALLOW_EXTERNAL_API")
 
 	viper.BindEnv("auth.method", "AUTH_METHOD")
 	viper.BindEnv("auth.ldap.url", "AUTH_LDAP_URL")

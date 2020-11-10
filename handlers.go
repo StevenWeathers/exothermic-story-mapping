@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"html/template"
@@ -11,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/anthonynsimon/bild/transform"
 	"github.com/gorilla/mux"
@@ -19,6 +21,13 @@ import (
 	"github.com/o1egl/govatar"
 	"github.com/spf13/viper"
 	"gopkg.in/go-playground/validator.v9"
+)
+
+type contextKey string
+
+var (
+	contextKeyUserID contextKey
+	apiKeyHeaderName string = "X-API-Key"
 )
 
 type userAccount struct {
@@ -108,6 +117,9 @@ func (s *server) clearUserCookies(w http.ResponseWriter) {
 		Name:     s.config.SecureCookieName,
 		Value:    "",
 		Path:     s.config.PathPrefix + "/",
+		Domain:   s.config.AppDomain,
+		Secure:   s.config.SecureCookieFlag,
+		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 		HttpOnly: true,
 	}
@@ -145,10 +157,25 @@ func (s *server) validateUserCookie(w http.ResponseWriter, r *http.Request) (str
 // adminOnly middleware checks if the user is an admin, otherwise reject their request
 func (s *server) adminOnly(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		apiKey := r.Header.Get(apiKeyHeaderName)
+		apiKey = strings.TrimSpace(apiKey)
+		var userID string
+
+		if apiKey != "" {
+			var apiKeyErr error
+			userID, apiKeyErr = s.database.ValidateAPIKey(apiKey)
+			if apiKeyErr != nil {
+				log.Println("error validating api key : " + apiKeyErr.Error() + "\n")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		} else {
+			var cookieErr error
+			userID, cookieErr = s.validateUserCookie(w, r)
+			if cookieErr != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 		}
 
 		adminErr := s.database.ConfirmAdmin(userID)
@@ -156,7 +183,48 @@ func (s *server) adminOnly(h http.HandlerFunc) http.HandlerFunc {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		h(w, r)
+
+		ctx := context.WithValue(r.Context(), contextKeyUserID, userID)
+
+		h(w, r.WithContext(ctx))
+	}
+}
+
+// userOnly validates that the request was made by a valid user
+func (s *server) userOnly(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		apiKey := r.Header.Get(apiKeyHeaderName)
+		apiKey = strings.TrimSpace(apiKey)
+		var userID string
+
+		if apiKey != "" {
+			var apiKeyErr error
+			userID, apiKeyErr = s.database.ValidateAPIKey(apiKey)
+			if apiKeyErr != nil {
+				log.Println("error validating api key : " + apiKeyErr.Error() + "\n")
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		} else {
+			var cookieErr error
+			userID, cookieErr = s.validateUserCookie(w, r)
+			if cookieErr != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		}
+
+		_, warErr := s.database.GetUser(userID)
+		if warErr != nil {
+			log.Println("error finding user : " + warErr.Error() + "\n")
+			s.clearUserCookies(w)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), contextKeyUserID, userID)
+
+		h(w, r.WithContext(ctx))
 	}
 }
 
@@ -176,6 +244,7 @@ func (s *server) handleIndex() http.HandlerFunc {
 		AppVersion        string
 		CookieName        string
 		PathPrefix        string
+		APIEnabled        bool
 	}
 	type UIConfig struct {
 		AnalyticsEnabled bool
@@ -210,6 +279,7 @@ func (s *server) handleIndex() http.HandlerFunc {
 		AllowRegistration: viper.GetBool("config.allow_registration") && viper.GetString("auth.method") == "normal",
 		DefaultLocale:     viper.GetString("config.default_locale"),
 		AuthMethod:        viper.GetString("auth.method"),
+		APIEnabled:        viper.GetBool("config.allow_external_api"),
 		AppVersion:        s.config.Version,
 		CookieName:        s.config.FrontendCookieName,
 		PathPrefix:        s.config.PathPrefix,
@@ -291,46 +361,6 @@ func (s *server) handleLogout() http.HandlerFunc {
 	}
 }
 
-// handleStoryboardCreate handles creating a storyboard (arena)
-func (s *server) handleStoryboardCreate() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		_, warErr := s.database.GetUser(userID)
-
-		if warErr != nil {
-			log.Println("error finding user : " + warErr.Error() + "\n")
-			s.clearUserCookies(w)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		body, bodyErr := ioutil.ReadAll(r.Body) // check for errors
-		if bodyErr != nil {
-			log.Println("error in reading user cookie : " + bodyErr.Error() + "\n")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		var keyVal struct {
-			StoryboardName string `json:"storyboardName"`
-		}
-		json.Unmarshal(body, &keyVal) // check for errors
-
-		newStoryboard, err := s.database.CreateStoryboard(userID, keyVal.StoryboardName)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, newStoryboard)
-	}
-}
-
 // handleUserRecruit registers a user as a guest user
 func (s *server) handleUserRecruit() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -408,52 +438,6 @@ func (s *server) handleUserEnlist() http.HandlerFunc {
 	}
 }
 
-// handleStoryboardGet looks up storyboard or returns notfound status
-func (s *server) handleStoryboardGet() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		StoryboardID := vars["id"]
-
-		storyboard, err := s.database.GetStoryboard(StoryboardID)
-
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, storyboard)
-	}
-}
-
-// handleStoryboardsGet looks up storyboards associated with userID
-func (s *server) handleStoryboardsGet() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		_, warErr := s.database.GetUser(userID)
-
-		if warErr != nil {
-			log.Println("error finding user : " + warErr.Error() + "\n")
-			s.clearUserCookies(w)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		storyboards, err := s.database.GetStoryboardsByUser(userID)
-
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		RespondWithJSON(w, http.StatusOK, storyboards)
-	}
-}
-
 // handleForgotPassword attempts to send a password reset email
 func (s *server) handleForgotPassword() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -516,11 +500,7 @@ func (s *server) handleUpdatePassword() http.HandlerFunc {
 		keyVal := make(map[string]string)
 		json.Unmarshal(body, &keyVal) // check for errors
 
-		userID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+		userID := r.Context().Value(contextKeyUserID).(string)
 
 		UserPassword, passwordErr := ValidateUserPassword(
 			keyVal["userPassword1"],
@@ -551,8 +531,8 @@ func (s *server) handleUserProfile() http.HandlerFunc {
 		vars := mux.Vars(r)
 		UserID := vars["id"]
 
-		userCookieID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil || UserID != userCookieID {
+		userCookieID := r.Context().Value(contextKeyUserID).(string)
+		if UserID != userCookieID {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -579,8 +559,8 @@ func (s *server) handleUserProfileUpdate() http.HandlerFunc {
 		UserAvatar := keyVal["userAvatar"].(string)
 
 		UserID := vars["id"]
-		userCookieID, cookieErr := s.validateUserCookie(w, r)
-		if cookieErr != nil || UserID != userCookieID {
+		userCookieID := r.Context().Value(contextKeyUserID).(string)
+		if UserID != userCookieID {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -663,6 +643,176 @@ func (s *server) handleUserAvatar() http.HandlerFunc {
 }
 
 /*
+	Storyboard Handlers
+*/
+
+// handleStoryboardCreate handles creating a storyboard (arena)
+func (s *server) handleStoryboardCreate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value(contextKeyUserID).(string)
+
+		body, bodyErr := ioutil.ReadAll(r.Body) // check for errors
+		if bodyErr != nil {
+			log.Println("error in reading request body: " + bodyErr.Error() + "\n")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		var keyVal struct {
+			StoryboardName string `json:"storyboardName"`
+		}
+		json.Unmarshal(body, &keyVal) // check for errors
+
+		newStoryboard, err := s.database.CreateStoryboard(userID, keyVal.StoryboardName)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, newStoryboard)
+	}
+}
+
+// handleStoryboardGet looks up storyboard or returns notfound status
+func (s *server) handleStoryboardGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		StoryboardID := vars["id"]
+
+		storyboard, err := s.database.GetStoryboard(StoryboardID)
+
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, storyboard)
+	}
+}
+
+// handleStoryboardsGet looks up storyboards associated with userID
+func (s *server) handleStoryboardsGet() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value(contextKeyUserID).(string)
+
+		storyboards, err := s.database.GetStoryboardsByUser(userID)
+
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, storyboards)
+	}
+}
+
+/*
+	API Key Handlers
+*/
+
+// handleAPIKeyGenerate handles generating an API key for a user
+func (s *server) handleAPIKeyGenerate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		body, _ := ioutil.ReadAll(r.Body) // check for errors
+		keyVal := make(map[string]interface{})
+		json.Unmarshal(body, &keyVal) // check for errors
+		APIKeyName := keyVal["name"].(string)
+
+		UserID := vars["id"]
+		userCookieID := r.Context().Value(contextKeyUserID).(string)
+		if UserID != userCookieID {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		APIKey, keyErr := s.database.GenerateAPIKey(UserID, APIKeyName)
+		if keyErr != nil {
+			log.Println("error attempting to generate api key : " + keyErr.Error() + "\n")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, APIKey)
+	}
+}
+
+// handleUserAPIKeys handles getting user API keys
+func (s *server) handleUserAPIKeys() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		UserID := vars["id"]
+		userCookieID := r.Context().Value(contextKeyUserID).(string)
+		if UserID != userCookieID {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		APIKeys, keysErr := s.database.GetUserAPIKeys(UserID)
+		if keysErr != nil {
+			log.Println("error retrieving api keys : " + keysErr.Error() + "\n")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, APIKeys)
+	}
+}
+
+// handleUserAPIKeys handles getting user API keys
+func (s *server) handleUserAPIKeyUpdate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		UserID := vars["id"]
+		userCookieID := r.Context().Value(contextKeyUserID).(string)
+		if UserID != userCookieID {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		APK := vars["keyID"]
+		body, _ := ioutil.ReadAll(r.Body) // check for errors
+		keyVal := make(map[string]interface{})
+		json.Unmarshal(body, &keyVal) // check for errors
+		active := keyVal["active"].(bool)
+
+		APIKeys, keysErr := s.database.UpdateUserAPIKey(UserID, APK, active)
+		if keysErr != nil {
+			log.Println("error updating api key : " + keysErr.Error() + "\n")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, APIKeys)
+	}
+}
+
+// handleUserAPIKeys handles getting user API keys
+func (s *server) handleUserAPIKeyDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		UserID := vars["id"]
+		userCookieID := r.Context().Value(contextKeyUserID).(string)
+		if UserID != userCookieID {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		APK := vars["keyID"]
+
+		APIKeys, keysErr := s.database.DeleteUserAPIKey(UserID, APK)
+		if keysErr != nil {
+			log.Println("error deleting api key : " + keysErr.Error() + "\n")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		RespondWithJSON(w, http.StatusOK, APIKeys)
+	}
+}
+
+/*
 	Admin Handlers
 */
 
@@ -721,5 +871,47 @@ func (s *server) handleUserCreate() http.HandlerFunc {
 		s.email.SendWelcome(UserName, UserEmail, VerifyID)
 
 		RespondWithJSON(w, http.StatusOK, newUser)
+	}
+}
+
+// handleUserPromote handles promoting a user to ADMIN by ID
+func (s *server) handleUserPromote() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body) // check for errors
+		keyVal := make(map[string]string)
+		jsonErr := json.Unmarshal(body, &keyVal) // check for errors
+		if jsonErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		err := s.database.PromoteUser(keyVal["userId"])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		return
+	}
+}
+
+// handleUserDemote handles demoting a user to REGISTERED by ID
+func (s *server) handleUserDemote() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body) // check for errors
+		keyVal := make(map[string]string)
+		jsonErr := json.Unmarshal(body, &keyVal) // check for errors
+		if jsonErr != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		err := s.database.DemoteUser(keyVal["userId"])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		return
 	}
 }

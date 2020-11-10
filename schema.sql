@@ -80,11 +80,22 @@ CREATE TABLE IF NOT EXISTS user_verify (
     expire_date TIMESTAMP DEFAULT NOW() + INTERVAL '24 hour'
 );
 
+CREATE TABLE IF NOT EXISTS api_keys (
+    id TEXT NOT NULL PRIMARY KEY,
+    user_id UUID REFERENCES users NOT NULL,
+    name VARCHAR(256) NOT NULL,
+    active BOOL DEFAULT true,
+    created_date TIMESTAMP DEFAULT NOW(),
+    updated_date TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, name)
+);
+
 --
 -- Table Alterations
 --
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar VARCHAR(128) DEFAULT 'identicon';
+ALTER TABLE storyboard_user ADD COLUMN IF NOT EXISTS abandoned BOOL DEFAULT false;
 
 --
 -- Stored Procedures
@@ -374,6 +385,16 @@ BEGIN
 END;
 $$;
 
+-- Demote User to Registered by ID --
+CREATE OR REPLACE PROCEDURE demote_user(userId UUID)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE users SET type = 'REGISTERED' WHERE id = userId;
+
+    COMMIT;
+END;
+$$;
+
 --
 -- Stored Functions
 --
@@ -399,7 +420,7 @@ BEGIN
     RETURN QUERY
         SELECT b.id, b.name, b.owner_id
 		FROM storyboard b
-		LEFT JOIN storyboard_user bw ON b.id = bw.storyboard_id WHERE bw.user_id = userId
+		LEFT JOIN storyboard_user bw ON b.id = bw.storyboard_id WHERE bw.user_id = userId AND bw.abandoned = false
 		GROUP BY b.id ORDER BY b.created_date DESC;
 END;
 $$ LANGUAGE plpgsql;

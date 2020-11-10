@@ -53,13 +53,26 @@ func (d *Database) GetAppStats() (*ApplicationStats, error) {
 }
 
 // PromoteUser promotes a user to ADMIN type
-func (d *Database) PromoteUser(AdminID string, UserID string) error {
+func (d *Database) PromoteUser(UserID string) error {
 	if _, err := d.db.Exec(
 		`call promote_user($1);`,
 		UserID,
 	); err != nil {
 		log.Println(err)
 		return errors.New("error attempting to promote user to ADMIN")
+	}
+
+	return nil
+}
+
+// DemoteUser demotes a user to REGISTERED type
+func (d *Database) DemoteUser(UserID string) error {
+	if _, err := d.db.Exec(
+		`call demote_user($1);`,
+		UserID,
+	); err != nil {
+		log.Println(err)
+		return errors.New("error attempting to demote user to REGISTERED")
 	}
 
 	return nil

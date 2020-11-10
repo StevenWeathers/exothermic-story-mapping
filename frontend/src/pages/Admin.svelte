@@ -6,6 +6,7 @@
     import CreateUser from '../components/CreateUser.svelte'
     import { user } from '../stores.js'
     import { appRoutes } from '../config'
+    import { _ } from '../i18n'
 
     export let xfetch
     export let router
@@ -63,6 +64,44 @@
             .catch(function(error) {
                 notifications.danger('Error getting users')
             })
+    }
+
+    function promoteUser(userId) {
+        return function() {
+            const body = {
+                userId,
+            }
+
+            xfetch('/api/admin/promote', { body })
+                .then(function() {
+                    eventTag('admin_promote_user', 'engagement', 'success')
+
+                    getUsers()
+                })
+                .catch(function(error) {
+                    notifications.danger('Error encountered promoting user')
+                    eventTag('admin_promote_user', 'engagement', 'failure')
+                })
+        }
+    }
+
+    function demoteUser(userId) {
+        return function() {
+            const body = {
+                userId,
+            }
+
+            xfetch('/api/admin/demote', { body })
+                .then(function() {
+                    eventTag('admin_demote_user', 'engagement', 'success')
+
+                    getUsers()
+                })
+                .catch(function(error) {
+                    notifications.danger('Error encountered demoting user')
+                    eventTag('admin_demote_user', 'engagement', 'failure')
+                })
+        }
     }
 
     onMount(() => {
@@ -123,10 +162,11 @@
             <table class="table-fixed w-full">
                 <thead>
                     <tr>
-                        <th class="w-2/6 px-4 py-2">User Name</th>
-                        <th class="w-2/6 px-4 py-2">User Email</th>
-                        <th class="w-1/6 px-4 py-2">Verified</th>
-                        <th class="w-1/6 px-4 py-2"></th>
+                        <th class="w-3/12 px-4 py-2">User Name</th>
+                        <th class="w-3/12 px-4 py-2">User Email</th>
+                        <th class="w-2/12 px-4 py-2">Verified</th>
+                        <th class="w-2/12 px-4 py-2">Type</th>
+                        <th class="w-2/12 px-4 py-2">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,7 +175,22 @@
                             <td class="border px-4 py-2">{user.name}</td>
                             <td class="border px-4 py-2">{user.email}</td>
                             <td class="border px-4 py-2">{user.verified}</td>
-                            <td class="border px-4 py-2"></td>
+                            <td class="border px-4 py-2">{user.type}</td>
+                            <td class="border px-4 py-2">
+                                {#if user.type !== 'ADMIN'}
+                                    <HollowButton
+                                        onClick="{promoteUser(user.id)}"
+                                        color="blue">
+                                        {$_('actions.user.promote')}
+                                    </HollowButton>
+                                {:else}
+                                    <HollowButton
+                                        onClick="{demoteUser(user.id)}"
+                                        color="blue">
+                                        {$_('actions.user.demote')}
+                                    </HollowButton>
+                                {/if}
+                            </td>
                         </tr>
                     {/each}
                 </tbody>

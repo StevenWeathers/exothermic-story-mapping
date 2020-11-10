@@ -1,6 +1,9 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 // Config holds all the configuration for the db
 type Config struct {
@@ -67,4 +70,16 @@ type User struct {
 	UserAvatar string `json:"avatar"`
 	UserType   string `json:"type"`
 	Verified   bool   `json:"verified"`
+}
+
+// APIKey structure
+type APIKey struct {
+	ID          string    `json:"id"`
+	Prefix      string    `json:"prefix"`
+	UserID      string    `json:"userId"`
+	Name        string    `json:"name"`
+	Key         string    `json:"apiKey"`
+	Active      bool      `json:"active"`
+	CreatedDate time.Time `json:"createdDate"`
+	UpdatedDate time.Time `json:"updatedDate"`
 }

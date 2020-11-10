@@ -227,6 +227,15 @@
                         user.delete()
                         router.route(`${appRoutes.register}/${storyboardId}`)
                     })
+                } else if (e.code === 4002) {
+                    eventTag(
+                        'storyboard_user_abandoned',
+                        'storyboard',
+                        '',
+                        () => {
+                            router.route(appRoutes.storyboards)
+                        },
+                    )
                 } else {
                     socketReconnecting = true
                     eventTag('socket_close', 'storyboard', '')
@@ -266,6 +275,12 @@
     function concedeStoryboard() {
         eventTag('concede_storyboard', 'storyboard', '', () => {
             sendSocketEvent('concede_storyboard', '')
+        })
+    }
+
+    function abandonStoryboard() {
+        eventTag('abandon_storyboard', 'storyboard', '', () => {
+            sendSocketEvent('abandon_storyboard', '')
         })
     }
 
@@ -402,6 +417,10 @@
                         onClick="{concedeStoryboard}"
                         additionalClasses="mr-2">
                         Delete Storyboard
+                    </HollowButton>
+                {:else}
+                    <HollowButton color="red" onClick="{abandonStoryboard}">
+                        Leave Storyboard
                     </HollowButton>
                 {/if}
                 <HollowButton

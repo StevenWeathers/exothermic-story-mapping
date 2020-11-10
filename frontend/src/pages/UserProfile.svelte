@@ -3,11 +3,14 @@
 
     import PageLayout from '../components/PageLayout.svelte'
     import SolidButton from '../components/SolidButton.svelte'
+    import HollowButton from '../components/HollowButton.svelte'
     import UserAvatar from '../components/UserAvatar.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
     import { appRoutes } from '../config'
+    import CreateApiKey from '../components/CreateApiKey.svelte'
+    import { _ } from '../i18n'
 
     export let xfetch
     export let router
@@ -15,16 +18,25 @@
     export let notifications
 
     let userProfile = {}
+    let apiKeys = []
+    let showApiKeyCreate = false
 
     let updatePassword = false
     let userPassword1 = ''
     let userPassword2 = ''
 
-    const avatarService = appConfig.AvatarService
-    let avatars
-
-    if (avatarService == 'dicebear') {
-        avatars = [
+    const { APIEnabled, AvatarService, AuthMethod } = appConfig
+    const configurableAvatarServices = [
+        'dicebear',
+        'gravatar',
+        'robohash',
+        'govatar',
+    ]
+    const isAvatarConfigurable = configurableAvatarServices.includes(
+        AvatarService,
+    )
+    const avatarOptions = {
+        dicebear: [
             'male',
             'female',
             'human',
@@ -34,21 +46,20 @@
             'jdenticon',
             'gridy',
             'code',
-        ]
-    } else if (avatarService == 'gravatar') {
-        avatars = [
+        ],
+        gravatar: [
             'mp',
             'identicon',
             'monsterid',
             'wavatar',
             'retro',
             'robohash',
-        ]
-    } else if (avatarService == 'robohash') {
-        avatars = ['set1', 'set2', 'set3', 'set4']
-    } else if (avatarService == 'govatar') {
-        avatars = ['male', 'female']
+        ],
+        robohash: ['set1', 'set2', 'set3', 'set4'],
+        govatar: ['male', 'female'],
     }
+
+    let avatars = isAvatarConfigurable ? avatarOptions[AvatarService] : []
 
     function toggleUpdatePassword() {
         updatePassword = !updatePassword
@@ -138,6 +149,70 @@
         }
     }
 
+    function getApiKeys() {
+        xfetch(`/api/user/${$user.id}/apikeys`)
+            .then(res => res.json())
+            .then(function(apks) {
+                apiKeys = apks
+            })
+            .catch(function(error) {
+                notifications.danger(
+                    $_('pages.userProfile.apiKeys.errorRetreiving'),
+                )
+                eventTag('fetch_profile_apikeys', 'engagement', 'failure')
+            })
+    }
+    getApiKeys()
+
+    function deleteApiKey(apk) {
+        return function() {
+            xfetch(`/api/user/${$user.id}/apikey/${apk}`, {
+                method: 'DELETE',
+            })
+                .then(res => res.json())
+                .then(function(apks) {
+                    notifications.success(
+                        $_('pages.userProfile.apiKeys.deleteSuccess'),
+                    )
+                    apiKeys = apks
+                })
+                .catch(function(error) {
+                    notifications.danger(
+                        $_('pages.userProfile.apiKeys.deleteFailed'),
+                    )
+                })
+        }
+    }
+
+    function toggleApiKeyActiveStatus(apk, active) {
+        return function() {
+            const body = {
+                active: !active,
+            }
+
+            xfetch(`/api/user/${$user.id}/apikey/${apk}`, {
+                body,
+                method: 'PUT',
+            })
+                .then(res => res.json())
+                .then(function(apks) {
+                    notifications.success(
+                        $_('pages.userProfile.apiKeys.updateSuccess'),
+                    )
+                    apiKeys = apks
+                })
+                .catch(function(error) {
+                    notifications.danger(
+                        $_('pages.userProfile.apiKeys.updateFailed'),
+                    )
+                })
+        }
+    }
+
+    function toggleCreateApiKey() {
+        showApiKeyCreate = !showApiKeyCreate
+    }
+
     onMount(() => {
         if (!$user.id) {
             router.route(appRoutes.register)
@@ -146,13 +221,11 @@
 
     $: updateDisabled = userProfile.name === ''
     $: updatePasswordDisabled =
-        userPassword1 === '' ||
-        userPassword2 === '' ||
-        appConfig.authMethod === 'ldap'
+        userPassword1 === '' || userPassword2 === '' || AuthMethod === 'ldap'
 </script>
 
 <PageLayout>
-    <div class="flex justify-center">
+    <div class="flex justify-center flex-wrap">
         <div class="w-full md:w-1/2 lg:w-1/3">
             {#if !updatePassword}
                 <form
@@ -210,7 +283,7 @@
                             disabled />
                     </div>
 
-                    {#if avatarService == 'dicebear' || avatarService == 'gravatar' || avatarService == 'robohash' || avatarService == 'govatar'}
+                    {#if isAvatarConfigurable}
                         <div class="mb-4">
                             <label
                                 class="block text-gray-700 text-sm font-bold
@@ -249,7 +322,7 @@
                                         <UserAvatar
                                             userId="{userProfile.id}"
                                             avatar="{userProfile.avatar}"
-                                            {avatarService}
+                                            {AvatarService}
                                             width="40" />
                                     </span>
                                 </div>
@@ -342,5 +415,90 @@
                 </form>
             {/if}
         </div>
+
+        {#if APIEnabled}
+            <div class="w-full">
+                <div class="bg-white shadow-lg rounded p-4 md:p-6 mb-4">
+                    <div class="flex w-full">
+                        <div class="w-4/5">
+                            <h2
+                                class="text-2xl md:text-3xl font-bold
+                                text-center mb-4">
+                                {$_('pages.userProfile.apiKeys.title')}
+                            </h2>
+                        </div>
+                        <div class="w-1/5">
+                            <div class="text-right">
+                                <HollowButton onClick="{toggleCreateApiKey}">
+                                    {$_('pages.userProfile.apiKeys.createButton')}
+                                </HollowButton>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="table-fixed w-full">
+                        <thead>
+                            <tr>
+                                <th class="w-2/12 px-4 py-2">
+                                    {$_('pages.userProfile.apiKeys.name')}
+                                </th>
+                                <th class="w-2/12 px-4 py-2">
+                                    {$_('pages.userProfile.apiKeys.prefix')}
+                                </th>
+                                <th class="w-2/12 px-4 py-2">
+                                    {$_('pages.userProfile.apiKeys.active')}
+                                </th>
+                                <th class="w-3/12 px-4 py-2">
+                                    {$_('pages.userProfile.apiKeys.updated')}
+                                </th>
+                                <th class="w-3/12 px-4 py-2">
+                                    {$_('pages.userProfile.apiKeys.actions')}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each apiKeys as apk}
+                                <tr>
+                                    <td class="border px-4 py-2">{apk.name}</td>
+                                    <td class="border px-4 py-2">
+                                        {apk.prefix}
+                                    </td>
+                                    <td class="border px-4 py-2">
+                                        {apk.active}
+                                    </td>
+                                    <td class="border px-4 py-2">
+                                        {new Date(apk.updatedDate).toLocaleString()}
+                                    </td>
+                                    <td class="border px-4 py-2">
+                                        <HollowButton
+                                            onClick="{toggleApiKeyActiveStatus(apk.id, apk.active)}">
+                                            {#if !apk.active}
+                                                {$_('pages.userProfile.apiKeys.activateButton')}
+                                            {:else}
+                                                {$_('pages.userProfile.apiKeys.deactivateButton')}
+                                            {/if}
+                                        </HollowButton>
+                                        <HollowButton
+                                            color="red"
+                                            onClick="{deleteApiKey(apk.id)}">
+                                            {$_('pages.userProfile.apiKeys.deleteButton')}
+                                        </HollowButton>
+                                    </td>
+                                </tr>
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {#if showApiKeyCreate}
+                <CreateApiKey
+                    {toggleCreateApiKey}
+                    handleApiKeyCreate="{getApiKeys}"
+                    {notifications}
+                    {xfetch}
+                    {eventTag} />
+            {/if}
+        {/if}
     </div>
 </PageLayout>
