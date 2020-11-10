@@ -16,9 +16,6 @@
     const registrationAllowed = appConfig.AllowRegistration
 
     let userName = $user.name || ''
-    let userEmail = ''
-    let userPassword1 = ''
-    let userPassword2 = ''
 
     $: targetPage = storyboardId
         ? `${appRoutes.storyboard}/${storyboardId}`
@@ -61,54 +58,42 @@
         }
     }
 
-    function createUserRegistered(e) {
-        e.preventDefault()
+    function createUserRegistered(
+        userName,
+        userEmail,
+        userPassword1,
+        userPassword2,
+    ) {
         const body = {
             userName,
             userEmail,
             userPassword1,
             userPassword2,
         }
-        const validName = validateName(userName)
-        const validPasswords = validatePasswords(userPassword1, userPassword2)
 
-        let noFormErrors = true
-
-        if (!validName.valid) {
-            noFormErrors = false
-            notifications.danger(validName.error, 1500)
-        }
-
-        if (!validPasswords.valid) {
-            noFormErrors = false
-            notifications.danger(validPasswords.error, 1500)
-        }
-
-        if (noFormErrors) {
-            xfetch('/api/register', { body })
-                .then(res => res.json())
-                .then(function(newUser) {
-                    user.create({
-                        id: newUser.id,
-                        name: newUser.name,
-                        email: newUser.email,
-                        type: newUser.type,
-                    })
-
-                    eventTag(
-                        'register_account',
-                        'engagement',
-                        'success',
-                        () => {
-                            router.route(targetPage, true)
-                        },
-                    )
+        xfetch('/api/register', { body })
+            .then(res => res.json())
+            .then(function(newUser) {
+                user.create({
+                    id: newUser.id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    type: newUser.type,
                 })
-                .catch(function(error) {
-                    notifications.danger('Error encountered creating user')
-                    eventTag('register_account', 'engagement', 'failure')
-                })
-        }
+
+                eventTag(
+                    'register_account',
+                    'engagement',
+                    'success',
+                    () => {
+                        router.route(targetPage, true)
+                    },
+                )
+            })
+            .catch(function(error) {
+                notifications.danger('Error encountered creating user')
+                eventTag('register_account', 'engagement', 'failure')
+            })
     }
 
     $: registerDisabled = userName === ''
