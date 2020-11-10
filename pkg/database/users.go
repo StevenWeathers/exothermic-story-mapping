@@ -222,8 +222,7 @@ func (d *Database) UserResetRequest(UserEmail string) (resetID string, userName 
 	).Scan(&ResetID, &UserID, &UserName)
 	if e != nil {
 		log.Println("Unable to reset user: ", e)
-		// we don't want to alert the user that the email isn't valid
-		return "", "", nil
+		return "", "", e
 	}
 
 	return ResetID.String, UserName.String, nil

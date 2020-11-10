@@ -532,7 +532,11 @@ CREATE FUNCTION insert_user_reset(
 AS $$ 
 BEGIN
     SELECT id, name INTO userId, userName FROM users WHERE email = userEmail;
-    INSERT INTO user_reset (user_id) VALUES (userId) RETURNING reset_id INTO resetId;
+    IF FOUND THEN
+        INSERT INTO user_reset (user_id) VALUES (userId) RETURNING reset_id INTO resetId;
+    ELSE
+        RAISE EXCEPTION 'Nonexistent User --> %', userEmail USING HINT = 'Please check your Email';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 

@@ -448,13 +448,9 @@ func (s *server) handleForgotPassword() http.HandlerFunc {
 		UserEmail := keyVal["userEmail"]
 
 		ResetID, UserName, resetErr := s.database.UserResetRequest(UserEmail)
-		if resetErr != nil {
-			log.Println("error attempting to send user reset : " + resetErr.Error() + "\n")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		if resetErr == nil {
+			s.email.SendForgotPassword(UserName, UserEmail, ResetID)
 		}
-
-		s.email.SendForgotPassword(UserName, UserEmail, ResetID)
 
 		w.WriteHeader(http.StatusOK)
 		return
