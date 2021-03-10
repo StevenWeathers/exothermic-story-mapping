@@ -97,7 +97,7 @@ func (s *server) authAndCreateUserLdap(userUsername string, userPassword string)
 	authedUser, err = s.database.GetUserByEmail(useremail)
 	if authedUser == nil {
 		log.Println("User", useremail, "does not exist in database, auto-recruit")
-		authedUser, verifyID, err := s.database.CreateUserRegistered(usercn, useremail, "", "")
+		newUser, verifyID, err := s.database.CreateUserRegistered(usercn, useremail, "", "")
 		if err != nil {
 			log.Println("Failed auto-creating new user", err)
 			return authedUser, err
@@ -107,6 +107,7 @@ func (s *server) authAndCreateUserLdap(userUsername string, userPassword string)
 			log.Println("Failed verifying new user", err)
 			return authedUser, err
 		}
+		authedUser = newUser
 	}
 
 	return authedUser, nil

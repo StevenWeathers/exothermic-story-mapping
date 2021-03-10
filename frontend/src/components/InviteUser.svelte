@@ -22,7 +22,7 @@
         appearance-none text-gray-700 focus:outline-none focus:bg-white
         focus:border-orange-500 "
         type="text"
-        value="{hostname}{PathPrefix}{appRoutes.storyboard}/{storyboardId}"
+        value="{hostname}{appRoutes.storyboard}/{storyboardId}"
         id="StoryboardLink"
         readonly />
     <div class="flex -mr-px">
