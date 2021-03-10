@@ -1,14 +1,23 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"net/http"
 
-	"github.com/markbates/pkger"
 	"github.com/spf13/viper"
 )
 
+//go:embed dist
+var f embed.FS
+
 func (s *server) routes() {
-	staticHandler := http.FileServer(pkger.Dir("/dist"))
+	fsys, err := fs.Sub(f, "dist")
+	if err != nil {
+		panic(err)
+	}
+	staticHandler := http.FileServer(http.FS(fsys))
+
 	// static assets
 	s.router.PathPrefix("/static/").Handler(http.StripPrefix(s.config.PathPrefix, staticHandler))
 	s.router.PathPrefix("/img/").Handler(http.StripPrefix(s.config.PathPrefix, staticHandler))
@@ -44,7 +53,7 @@ func (s *server) routes() {
 	s.router.HandleFunc("/api/storyboards", s.userOnly(s.handleStoryboardsGet()))
 	// admin routes
 	s.router.HandleFunc("/api/admin/stats", s.adminOnly(s.handleAppStats()))
-	s.router.HandleFunc("/api/admin/users", s.adminOnly(s.handleGetRegisteredUsers()))
+	s.router.HandleFunc("/api/admin/users/{limit}/{offset}", s.adminOnly(s.handleGetRegisteredUsers()))
 	s.router.HandleFunc("/api/admin/user", s.adminOnly(s.handleUserCreate())).Methods("POST")
 	s.router.HandleFunc("/api/admin/promote", s.adminOnly(s.handleUserPromote())).Methods("POST")
 	s.router.HandleFunc("/api/admin/demote", s.adminOnly(s.handleUserDemote())).Methods("POST")

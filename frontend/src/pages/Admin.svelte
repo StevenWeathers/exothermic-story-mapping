@@ -4,6 +4,7 @@
     import PageLayout from '../components/PageLayout.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import CreateUser from '../components/CreateUser.svelte'
+    import Pagination from '../components/Pagination.svelte'
     import { user } from '../stores.js'
     import { appRoutes } from '../config'
     import { _ } from '../i18n'
@@ -13,6 +14,8 @@
     export let notifications
     export let eventTag
 
+    const usersPageLimit = 100
+
     let appStats = {
         unregisteredUserCount: 0,
         registeredUserCount: 0,
@@ -20,6 +23,7 @@
     }
     let users = []
     let showCreateUser = false
+    let usersPage = 1
 
     function toggleCreateUser() {
         showCreateUser = !showCreateUser
@@ -56,7 +60,8 @@
         })
 
     function getUsers() {
-        xfetch('/api/admin/users')
+        const usersOffset = (usersPage - 1) * usersPageLimit
+        xfetch(`/api/admin/users/${usersPageLimit}/${usersOffset}`)
             .then(res => res.json())
             .then(function(result) {
                 users = result
@@ -102,6 +107,11 @@
                     eventTag('admin_demote_user', 'engagement', 'failure')
                 })
         }
+    }
+
+    const changePage = evt => {
+        usersPage = evt.detail
+        getusers()
     }
 
     onMount(() => {
@@ -195,6 +205,12 @@
                     {/each}
                 </tbody>
             </table>
+
+            {#if appStats.registeredUserCount > usersPageLimit}
+            <div class="pt-6 flex justify-center">
+                <Pagination bind:current={usersPage} num_items={appStats.registeredUserCount} per_page={usersPageLimit} on:navigate={changePage} />
+            </div>
+            {/if}
         </div>
     </div>
 

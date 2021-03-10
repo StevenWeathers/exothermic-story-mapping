@@ -17,7 +17,7 @@ RUN npm run build
 ############################
 # STEP 2 build executable binary
 ############################
-FROM golang:1.13-alpine as builderGo
+FROM golang:1.16-alpine as builderGo
 ARG BUILD_VERSION
 # Install git + SSL ca certificates.
 # Git is required for fetching the dependencies.
@@ -32,12 +32,10 @@ COPY ./go.mod $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
 COPY ./go.sum $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
 # Copy SQL file
 COPY ./schema.sql $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
-# Copy our static assetsa
+# Copy our static assets
 COPY --from=builderNode /webapp/dist $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/dist
 # Set working dir
 WORKDIR $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
-# Fetch dependencies.
-RUN go install -v github.com/markbates/pkger/cmd/pkger
 RUN go mod download
 # Bundle the static assets
 RUN pkger

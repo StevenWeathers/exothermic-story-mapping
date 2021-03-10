@@ -42,10 +42,17 @@ func ComparePasswords(hashedPwd string, plainPwd []byte) bool {
 }
 
 // GetRegisteredUsers retrieves the registered users from db
-func (d *Database) GetRegisteredUsers() []*User {
+func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 	var users = make([]*User, 0)
 	rows, err := d.db.Query(
-		"SELECT id, name, email, type, avatar, verified FROM users WHERE email IS NOT NULL",
+		`SELECT id, name, email, type, avatar, verified
+		FROM users
+		WHERE email IS NOT NULL
+		LIMIT $1
+		OFFSET $2
+		`,
+		Limit,
+		Offset,
 	)
 	if err == nil {
 		defer rows.Close()

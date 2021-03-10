@@ -15,7 +15,6 @@ Each storyboard has the ability to add goals (rows), columns, and stories.
 
 ![image](https://user-images.githubusercontent.com/846933/77712629-b8933500-6faa-11ea-9b9f-b64a1f648f98.png)
 
-
 # Running in production
 
 ## Use latest docker image
@@ -28,74 +27,6 @@ docker pull stevenweathers/exothermic-story-mapping
 
 [![](https://img.shields.io/github/v/release/stevenweathers/exothermic-story-mapping?include_prereleases)](https://github.com/StevenWeathers/exothermic-story-mapping/releases/latest)
 
-# Running locally
-
-## Building and running with Docker (preferred solution)
-
-### Using Docker Compose
-
-```
-docker-compose up --build
-```
-
-### Using Docker without Compose
-
-This solution will require you to pass environment variables or setup the config file, as well as setup and manage the DB yourself.
-
-```
-docker build ./ -f ./build/Dockerfile -t exothermic:latest
-docker run --publish 8080:8080 --name exothermic exothermic:latest
-```
-
-## Building
-
-To run without docker you will need to first build, then setup the postgres DB,
-and pass the user, pass, name, host, and port to the application as environment variables
-
-```
-DB_HOST=
-DB_PORT=
-DB_USER=
-DB_PASS=
-DB_NAME=
-```
-
-### Install dependencies
-```
-go get
-go go install github.com/markbates/pkger/cmd/pkger
-npm install
-```
-
-## Build with Make
-```
-make build
-```
-### OR manual steps
-
-### Build static assets
-```
-npm run build
-```
-
-### bundle up static assets
-```
-pkger
-```
-
-### Build for current OS
-```
-go build
-```
-
-# Adding new Locale's
-Using svelte-i18n **Exothermic** now supports Locale selection on the UI (Default en-US)
-
-Adding new locale's involves just a couple of steps.
-
-1. First add the locale dictionary json files in ```frontend/public/lang/default/``` and ```frontend/public/lang/friendly/``` by copying the en.json and just changing the values of all keys
-1. Second, the locale will need to be added to the locales list used by switcher component in ```frontend/config.js``` ```locales``` object
-
 # Configuration
 Thunderdome may be configured through environment variables or via a yaml file `config.yaml`
 located in one of:
@@ -104,30 +35,64 @@ located in one of:
 * `$HOME/.config/exothermic/`
 * Current working directory
 
-The following configuration options exists:
+### Example yaml configuration file
+
+```
+http:
+  domain: exothermic.dev
+db:
+  host: localhost
+  port: 5432
+  user: thor
+  pass: odinson
+  name: exothermic
+```
+
+## Required configuration items
+
+For Thunderdome to work correctly the following configuration items are required:
 
 | Option                     | Environment Variable | Description                                | Default Value           |
 | -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
-| `http.cookie_hashkey`      | COOKIE_HASHKEY       | Secret used to make secure cookies secure. | pyrom-maniac |
-| `http.port`                | PORT                 | Which port to listen for HTTP connections. | 8080 |
-| `http.secure_cookie`       | COOKIE_SECURE        | Use secure cookies or not.                 | true |
-| `http.backend_cookie_name` | BACKEND_COOKIE_NAME  | The name of the backend cookie utilized for actual auth/validation | userId |
-| `http.frontend_cookie_name`| FRONTEND_COOKIE_NAME | The name of the cookie utilized by the UI (purely for convenience not auth) | user |
 | `http.domain`              | APP_DOMAIN           | The domain/base URL for this instance of Thunderdome.  Used for creating URLs in emails. | exothermic.dev |
-| `http.path_prefix`         | PATH_PREFIX          | Prefix added to all application urls for shared domain use, in format of `/{prefix}` e.g. `/exothermic` | |
-| `analytics.enabled`        | ANALYTICS_ENABLED    | Enable/disable google analytics.           | true |
-| `analytics.id`             | ANALYTICS_ID         | Google analytics identifier.               | UA-161935945-1 |
+| `http.cookie_hashkey`      | COOKIE_HASHKEY       | Secret used to make secure cookies secure. | pyrom-maniac |
+
+### Database configuration
+
+Thunderdome uses a Postgres database to store all data, the following configuration options exist: 
+
+| Option                     | Environment Variable | Description                                | Default Value           |
+| -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
 | `db.host`                  | DB_HOST              | Database host name.                        | db |
 | `db.port`                  | DB_PORT              | Database port number.                      | 5432 |
 | `db.user`                  | DB_USER              | Database user id.                          | thor |
 | `db.pass`                  | DB_PASS              | Database user password.                    | odinson |
 | `db.name`                  | DB_NAME              | Database instance name.                    | exothermic |
 | `db.sslmode`               | DB_SSLMODE           | Database SSL Mode (disable, allow, prefer, require, verify-ca, verify-full). | disable |
+
+### SMTP (Mail) server configuration
+
+Thunderdome sends emails for user registration related activities, the following configuration options exist:
+
+| Option                     | Environment Variable | Description                                | Default Value           |
+| -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
 | `smtp.host`                | SMTP_HOST            | Smtp server hostname.                      | localhost |
 | `smtp.port`                | SMTP_PORT            | Smtp server port number.                   | 25 |
 | `smtp.secure`              | SMTP_SECURE          | Set to authenticate with the Smtp server.  | true |
 | `smtp.identity`            | SMTP_IDENTITY        | Smtp server authorization identity.  Usually unset. | |
 | `smtp.sender`              | SMTP_SENDER          | From address in emails sent by Thunderdome. | no-reply@exothermic.dev |
+
+## Optional configuration items
+
+| Option                     | Environment Variable | Description                                | Default Value           |
+| -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
+| `http.port`                | PORT                 | Which port to listen for HTTP connections. | 8080 |
+| `http.secure_cookie`       | COOKIE_SECURE        | Use secure cookies or not.                 | true |
+| `http.backend_cookie_name` | BACKEND_COOKIE_NAME  | The name of the backend cookie utilized for actual auth/validation | userId |
+| `http.frontend_cookie_name`| FRONTEND_COOKIE_NAME | The name of the cookie utilized by the UI (purely for convenience not auth) | user |
+| `http.path_prefix`         | PATH_PREFIX          | Prefix added to all application urls for shared domain use, in format of `/{prefix}` e.g. `/exothermic` | |
+| `analytics.enabled`        | ANALYTICS_ENABLED    | Enable/disable google analytics.           | true |
+| `analytics.id`             | ANALYTICS_ID         | Google analytics identifier.               | UA-161935945-1 |
 | `config.avatar_service`    | CONFIG_AVATAR_SERVICE | Avatar service used, possible values see next paragraph | goadorable |
 | `config.toast_timeout`     | CONFIG_TOAST_TIMEOUT | Number of milliseconds before notifications are hidden. | 1000 |
 | `config.allow_guests`     | CONFIG_ALLOW_GUESTS | Whether or not to allow guest (anonymous) users. | true |
@@ -184,6 +149,74 @@ ldapsearch -H auth.ldap.url [-Z] -x [-D auth.ldap.bindname -W] -b auth.ldap.base
 
 The `-Z` is only used if `auth.ldap.use_tls` is set, the `-D` and `-W` parameter is only used if `auth.ldap.bindname` is set.
 
+# Developing
+
+## Building and running with Docker (preferred solution)
+
+### Using Docker Compose
+
+```
+docker-compose up --build
+```
+
+### Using Docker without Compose
+
+This solution will require you to pass environment variables or setup the config file, as well as setup and manage the DB yourself.
+
+```
+docker build ./ -f ./build/Dockerfile -t exothermic:latest
+docker run --publish 8080:8080 --name exothermic exothermic:latest
+```
+
+## Building
+
+To run without docker you will need to first build, then setup the postgres DB,
+and pass the user, pass, name, host, and port to the application as environment variables
+
+```
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASS=
+DB_NAME=
+```
+
+### Install dependencies
+```
+go get
+npm install
+```
+
+## Build with Make
+```
+make build
+```
+### OR manual steps
+
+### Build static assets
+```
+npm run build
+```
+
+### Build for current OS
+```
+go build
+```
+
 # Run Locally
 
 Run the server and visit [http://localhost:8080](http://localhost:8080)
+
+# Adding new Locale's
+Using svelte-i18n **Exothermic** now supports Locale selection on the UI (Default en-US)
+
+Adding new locale's involves just a couple of steps.
+
+1. First add the locale dictionary json files in ```frontend/public/lang/default/``` and ```frontend/public/lang/friendly/``` by copying the en.json and just changing the values of all keys
+1. Second, the locale will need to be added to the locales list used by switcher component in ```frontend/config.js``` ```locales``` object
+
+# Donations
+
+For those who would like to donate a small amount for my efforts or monthly hosting costs of Thunderdome.dev I accept paypal.
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/smweathers?locale.x=en_US)
