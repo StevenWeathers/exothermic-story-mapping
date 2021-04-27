@@ -27,7 +27,7 @@ func (s *server) routes() {
 		s.router.PathPrefix("/avatar/{width}/{id}/{avatar}").Handler(s.handleUserAvatar()).Methods("GET")
 		s.router.PathPrefix("/avatar/{width}/{id}").Handler(s.handleUserAvatar()).Methods("GET")
 	}
-	// api (currently internal to UI application)
+	// api
 	// user authentication, profile
 	if viper.GetString("auth.method") == "ldap" {
 		s.router.HandleFunc("/api/auth", s.handleLdapLogin()).Methods("POST")
@@ -47,6 +47,7 @@ func (s *server) routes() {
 	s.router.HandleFunc("/api/user/{id}/apikeys", s.userOnly(s.handleUserAPIKeys())).Methods("GET")
 	s.router.HandleFunc("/api/user/{id}", s.userOnly(s.handleUserProfile())).Methods("GET")
 	s.router.HandleFunc("/api/user/{id}", s.userOnly(s.handleUserProfileUpdate())).Methods("POST")
+	s.router.HandleFunc("/api/user/{id}", s.userOnly(s.handleUserDelete())).Methods("DELETE")
 	// storyboard(s)
 	s.router.HandleFunc("/api/storyboard/{id}", s.handleStoryboardGet())
 	s.router.HandleFunc("/api/storyboard", s.userOnly(s.handleStoryboardCreate())).Methods("POST")
@@ -57,6 +58,8 @@ func (s *server) routes() {
 	s.router.HandleFunc("/api/admin/user", s.adminOnly(s.handleUserCreate())).Methods("POST")
 	s.router.HandleFunc("/api/admin/promote", s.adminOnly(s.handleUserPromote())).Methods("POST")
 	s.router.HandleFunc("/api/admin/demote", s.adminOnly(s.handleUserDemote())).Methods("POST")
+	s.router.HandleFunc("/api/admin/clean-storyboards", s.adminOnly(s.handleCleanStoryboards())).Methods("DELETE")
+	s.router.HandleFunc("/api/admin/clean-guests", s.adminOnly(s.handleCleanGuests())).Methods("DELETE")
 	// websocket for storyboard
 	s.router.HandleFunc("/api/arena/{id}", s.serveWs())
 	// handle index.html

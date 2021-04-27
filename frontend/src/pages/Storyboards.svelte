@@ -28,7 +28,7 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route(appRoutes.register)
+            router.route(appRoutes.login)
         }
     })
 </script>

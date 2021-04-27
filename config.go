@@ -44,6 +44,8 @@ func InitConfig() {
 	viper.SetDefault("config.allow_registration", true)
 	viper.SetDefault("config.default_locale", "en")
 	viper.SetDefault("config.allow_external_api", false)
+	viper.SetDefault("config.cleanup_storyboards_days_old", 180)
+	viper.SetDefault("config.cleanup_guests_days_old", 180)
 
 	viper.SetDefault("auth.method", "normal")
 	viper.SetDefault("auth.ldap.url", "")
@@ -88,6 +90,8 @@ func InitConfig() {
 	viper.BindEnv("config.allow_registration", "CONFIG_ALLOW_REGISTRATION")
 	viper.BindEnv("config.default_locale", "CONFIG_DEFAULT_LOCALE")
 	viper.BindEnv("config.allow_external_api", "CONFIG_ALLOW_EXTERNAL_API")
+	viper.BindEnv("config.cleanup_storyboards_days_old", "CONFIG_CLEANUP_STORYBOARDS_DAYS_OLD")
+	viper.BindEnv("config.cleanup_guests_days_old", "CONFIG_CLEANUP_GUESTS_DAYS_OLD")
 
 	viper.BindEnv("auth.method", "AUTH_METHOD")
 	viper.BindEnv("auth.ldap.url", "AUTH_LDAP_URL")

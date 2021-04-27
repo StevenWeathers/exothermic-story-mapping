@@ -97,6 +97,97 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar VARCHAR(128) DEFAULT 'identicon';
 ALTER TABLE storyboard_user ADD COLUMN IF NOT EXISTS abandoned BOOL DEFAULT false;
 
+DO $$
+BEGIN
+    --
+    -- Constraints
+    --
+    ALTER TABLE storyboard DROP CONSTRAINT IF EXISTS storyboard_owner_id_fkey;
+    ALTER TABLE storyboard_user DROP CONSTRAINT IF EXISTS storyboard_user_storyboard_id_fkey;
+    ALTER TABLE storyboard_user DROP CONSTRAINT IF EXISTS storyboard_user_user_id_fkey;
+    ALTER TABLE api_keys DROP CONSTRAINT IF EXISTS api_keys_user_id_fkey;
+    ALTER TABLE user_verify DROP CONSTRAINT IF EXISTS user_verify_user_id_fkey;
+    ALTER TABLE user_reset DROP CONSTRAINT IF EXISTS user_reset_user_id_fkey;
+    ALTER TABLE storyboard_goal DROP CONSTRAINT IF EXISTS storyboard_goal_storyboard_id_fkey;
+    ALTER TABLE storyboard_column DROP CONSTRAINT IF EXISTS storyboard_column_storyboard_id_fkey;
+    ALTER TABLE storyboard_column DROP CONSTRAINT IF EXISTS storyboard_column_goal_id_fkey;
+    ALTER TABLE storyboard_story DROP CONSTRAINT IF EXISTS storyboard_story_storyboard_id_fkey;
+    ALTER TABLE storyboard_story DROP CONSTRAINT IF EXISTS storyboard_story_goal_id_fkey;
+    ALTER TABLE storyboard_story DROP CONSTRAINT IF EXISTS storyboard_story_column_id_fkey;
+
+    BEGIN
+        ALTER TABLE storyboard ADD CONSTRAINT s_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard constraint s_owner_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_user ADD CONSTRAINT su_storyboard_id_fkey FOREIGN KEY (storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_user constraint su_storyboard_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_user ADD CONSTRAINT su_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_user constraint su_user_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE user_reset ADD CONSTRAINT ur_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'user_reset constraint ur_user_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE user_verify ADD CONSTRAINT uv_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'user_verify constraint uv_user_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE api_keys ADD CONSTRAINT apk_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'api_keys constraint apk_user_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_goal ADD CONSTRAINT sg_storyboard_id_fkey FOREIGN KEY (storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_goal constraint sg_storyboard_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_column ADD CONSTRAINT sc_storyboard_id_fkey FOREIGN KEY (storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_column constraint sc_storyboard_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_column ADD CONSTRAINT sc_goal_id_fkey FOREIGN KEY (goal_id) REFERENCES storyboard_goal(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_column constraint sc_goal_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_story ADD CONSTRAINT ss_storyboard_id_fkey FOREIGN KEY (storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_story constraint ss_storyboard_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_story ADD CONSTRAINT ss_goal_id_fkey FOREIGN KEY (goal_id) REFERENCES storyboard_goal(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_story constraint ss_goal_id_fkey already exists';
+    END;
+
+    BEGIN
+        ALTER TABLE storyboard_story ADD CONSTRAINT ss_column_id_fkey FOREIGN KEY (column_id) REFERENCES storyboard_column(id) ON DELETE CASCADE;
+        EXCEPTION
+        WHEN duplicate_object THEN RAISE NOTICE 'storyboard_story constraint ss_column_id_fkey already exists';
+    END;
+END $$;
+
 --
 -- Stored Procedures
 --
@@ -121,10 +212,6 @@ $$;
 CREATE OR REPLACE PROCEDURE delete_storyboard(storyboardId UUID)
 LANGUAGE plpgsql AS $$
 BEGIN
-    DELETE FROM storyboard_story WHERE storyboard_id = storyboardId;
-    DELETE FROM storyboard_column WHERE storyboard_id = storyboardId;
-    DELETE FROM storyboard_goal WHERE storyboard_id = storyboardId;
-    DELETE FROM storyboard_user WHERE storyboard_id = storyboardId;
     DELETE FROM storyboard WHERE id = storyboardId;
 
     COMMIT;
@@ -141,14 +228,18 @@ BEGIN
         storyboard_goal
         (storyboard_id, sort_order, name)
         VALUES (storyBoardId, sortOrder, goalName);
+
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyBoardId;
 END;
 $$;
 
 -- Revise a Storyboard Goal --
 CREATE OR REPLACE PROCEDURE update_storyboard_goal(goalId UUID, goalName VARCHAR(256))
 LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
 BEGIN
-    UPDATE storyboard_goal SET name = goalName, updated_date = NOW() WHERE id = goalId;
+    UPDATE storyboard_goal SET name = goalName, updated_date = NOW() WHERE id = goalId RETURNING storyboard_id INTO storyboardId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
 END;
 $$;
 
@@ -164,6 +255,7 @@ BEGIN
     DELETE FROM storyboard_column WHERE goal_id = goalId;
     DELETE FROM storyboard_goal WHERE id = goalId;
     UPDATE storyboard_goal sg SET sort_order = (sg.sort_order - 1) WHERE sg.storyboard_id = storyBoardId AND sg.sort_order > sortOrder;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
     COMMIT;
 END;
@@ -176,6 +268,7 @@ DECLARE sortOrder INTEGER;
 BEGIN
     sortOrder := (SELECT coalesce(MAX(sort_order), 0) FROM storyboard_column WHERE goal_id = goalId) + 1;
     INSERT INTO storyboard_column (storyboard_id, goal_id, sort_order) VALUES (storyBoardId, goalId, sortOrder);
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyBoardId;
 END;
 $$;
 
@@ -184,12 +277,14 @@ CREATE OR REPLACE PROCEDURE delete_storyboard_column(columnId UUID)
 LANGUAGE plpgsql AS $$
 DECLARE goalId UUID;
 DECLARE sortOrder INTEGER;
+DECLARE storyboardId UUID;
 BEGIN
     SELECT goal_id, sort_order INTO goalId, sortOrder FROM storyboard_column WHERE id = columnId;
 
     DELETE FROM storyboard_story WHERE column_id = columnId;
-    DELETE FROM storyboard_column WHERE id = columnId;
+    DELETE FROM storyboard_column WHERE id = columnId RETURNING storyboard_id INTO storyboardId;
     UPDATE storyboard_column sc SET sort_order = (sc.sort_order - 1) WHERE sc.goal_id = goalId AND sc.sort_order > sortOrder;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
     COMMIT;
 END;
@@ -202,30 +297,37 @@ DECLARE sortOrder INTEGER;
 BEGIN
     sortOrder := (SELECT coalesce(MAX(sort_order), 0) FROM storyboard_story WHERE columnId = columnId) + 1;
     INSERT INTO storyboard_story (storyboard_id, goal_id, column_id, sort_order) VALUES (storyBoardId, goalId, columnId, sortOrder);
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyBoardId;
 END;
 $$;
 
 -- Revise a Storyboard Story Name --
 CREATE OR REPLACE PROCEDURE update_story_name(storyId UUID, storyName VARCHAR(256))
 LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
 BEGIN
-    UPDATE storyboard_story SET name = storyName, updated_date = NOW() WHERE id = storyId;
+    UPDATE storyboard_story SET name = storyName, updated_date = NOW() WHERE id = storyId RETURNING storyboard_id INTO storyboardId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
 END;
 $$;
 
 -- Revise a Storyboard Story Content --
 CREATE OR REPLACE PROCEDURE update_story_content(storyId UUID, storyContent TEXT)
 LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
 BEGIN
-    UPDATE storyboard_story SET content = storyContent, updated_date = NOW() WHERE id = storyId;
+    UPDATE storyboard_story SET content = storyContent, updated_date = NOW() WHERE id = storyId RETURNING storyboard_id INTO storyboardId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
 END;
 $$;
 
 -- Revise a Storyboard Story Color --
 CREATE OR REPLACE PROCEDURE update_story_color(storyId UUID, storyColor VARCHAR(32))
 LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
 BEGIN
-    UPDATE storyboard_story SET color = storyColor, updated_date = NOW() WHERE id = storyId;
+    UPDATE storyboard_story SET color = storyColor, updated_date = NOW() WHERE id = storyId RETURNING storyboard_id INTO storyboardId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
 END;
 $$;
 
@@ -287,6 +389,8 @@ BEGIN
         storyBoardId, goalId, columnId, targetSortOrder, storyName, storyColor, storyContent, createdDate
     );
 
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+
     COMMIT;
 END;
 $$;
@@ -296,10 +400,12 @@ CREATE OR REPLACE PROCEDURE delete_storyboard_story(storyId UUID)
 LANGUAGE plpgsql AS $$
 DECLARE columnId UUID;
 DECLARE sortOrder INTEGER;
+DECLARE storyboardId UUID;
 BEGIN
-    SELECT column_id, sort_order INTO columnId, sortOrder FROM storyboard_story WHERE id = storyId;
+    SELECT column_id, sort_order, storyboard_id INTO columnId, sortOrder, storyboardId FROM storyboard_story WHERE id = storyId;
     DELETE FROM storyboard_story WHERE id = storyId;
     UPDATE storyboard_story ss SET sort_order = (ss.sort_order - 1) WHERE ss.column_id = columnId AND ss.sort_order > sortOrder;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
     COMMIT;
 END;
@@ -312,9 +418,9 @@ DECLARE matchedUserId UUID;
 BEGIN
 	matchedUserId := (
         SELECT w.id
-        FROM user_reset wr
-        LEFT JOIN user w ON w.id = wr.user_id
-        WHERE wr.reset_id = resetId AND NOW() < wr.expire_date
+        FROM user_reset ur
+        LEFT JOIN user w ON w.id = ur.user_id
+        WHERE ur.reset_id = resetId AND NOW() < ur.expire_date
     );
 
     IF matchedUserId IS NULL THEN
@@ -395,6 +501,36 @@ BEGIN
 END;
 $$;
 
+-- Clean up Storyboards older than X Days --
+CREATE OR REPLACE PROCEDURE clean_storyboards(daysOld INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM storyboard WHERE updated_date < (NOW() - daysOld * interval '1 day');
+
+    COMMIT;
+END;
+$$;
+
+-- Clean up Guest Users (and their created storyboards) older than X Days --
+CREATE OR REPLACE PROCEDURE clean_guest_users(daysOld INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM users WHERE last_active < (NOW() - daysOld * interval '1 day') AND type = 'GUEST';
+
+    COMMIT;
+END;
+$$;
+
+-- Deletes a User and all his storyboard(s), api keys --
+CREATE OR REPLACE PROCEDURE delete_user(userId UUID)
+LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM users WHERE id = userId;
+
+    COMMIT;
+END;
+$$;
+
 --
 -- Stored Functions
 --
@@ -420,7 +556,7 @@ BEGIN
     RETURN QUERY
         SELECT b.id, b.name, b.owner_id
 		FROM storyboard b
-		LEFT JOIN storyboard_user bw ON b.id = bw.storyboard_id WHERE bw.user_id = userId AND bw.abandoned = false
+		LEFT JOIN storyboard_user su ON b.id = su.storyboard_id WHERE su.user_id = userId AND su.abandoned = false
 		GROUP BY b.id ORDER BY b.created_date DESC;
 END;
 $$ LANGUAGE plpgsql;
@@ -473,10 +609,10 @@ CREATE FUNCTION get_storyboard_users(storyboardId UUID) RETURNS table (
 BEGIN
     RETURN QUERY
         SELECT
-			w.id, w.name, bw.active
-		FROM storyboard_user bw
-		LEFT JOIN users w ON bw.user_id = w.id
-		WHERE bw.storyboard_id = storyboardId
+			w.id, w.name, su.active
+		FROM storyboard_user su
+		LEFT JOIN users w ON su.user_id = w.id
+		WHERE su.storyboard_id = storyboardId
 		ORDER BY w.name;
 END;
 $$ LANGUAGE plpgsql;
@@ -489,9 +625,9 @@ CREATE FUNCTION get_storyboard_user(storyboardId UUID, userId UUID) RETURNS tabl
 BEGIN
     RETURN QUERY
         SELECT
-			w.id, w.name, coalesce(bw.active, FALSE)
+			w.id, w.name, coalesce(su.active, FALSE)
 		FROM users w
-		LEFT JOIN storyboard_user bw ON bw.user_id = w.id AND bw.storyboard_id = storyboardId
+		LEFT JOIN storyboard_user su ON su.user_id = w.id AND su.storyboard_id = storyboardId
 		WHERE w.id = userId;
 END;
 $$ LANGUAGE plpgsql;

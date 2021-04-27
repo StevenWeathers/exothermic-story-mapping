@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./build/Dockerfile
+    restart: always
     ports:
       - "8080:8080"
     depends_on:
@@ -18,8 +19,11 @@ services:
       COOKIE_SECURE: "false"
       SMTP_SECURE: "false"
       SMTP_HOST: mail
+      DB_NAME: exothermic
+      DB_USER: thor
+      DB_PASS: odinson
   db: 
-    image: postgres:latest
+    image: postgres:13.2
     restart: always
     environment:
       POSTGRES_DB: exothermic
@@ -32,7 +36,7 @@ services:
     networks:
       - asgard
   mail:
-    image: djfarrelly/maildev:latest
+    image: djfarrelly/maildev:1.1.0
     restart: always
     ports:
       - 1080:80

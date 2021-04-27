@@ -77,3 +77,29 @@ func (d *Database) DemoteUser(UserID string) error {
 
 	return nil
 }
+
+// CleanStoryboards deletes storyboards older than X days
+func (d *Database) CleanStoryboards(DaysOld int) error {
+	if _, err := d.db.Exec(
+		`call clean_storyboards($1);`,
+		DaysOld,
+	); err != nil {
+		log.Println(err)
+		return errors.New("error attempting to clean storyboards")
+	}
+
+	return nil
+}
+
+// CleanGuests deletes guest users older than X days
+func (d *Database) CleanGuests(DaysOld int) error {
+	if _, err := d.db.Exec(
+		`call clean_guest_users($1);`,
+		DaysOld,
+	); err != nil {
+		log.Println(err)
+		return errors.New("error attempting to clean Guest Warriors")
+	}
+
+	return nil
+}

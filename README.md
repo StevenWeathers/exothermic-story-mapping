@@ -99,6 +99,8 @@ Thunderdome sends emails for user registration related activities, the following
 | `config.allow_registration`     | CONFIG_ALLOW_REGISTRATION | Whether or not to allow user registration (outside Admin). | true |
 | `config.default_locale`   | CONFIG_DEFAULT_LOCALE | The default locale (language) for the UI | en |
 | `config.allow_external_api`    | CONFIG_ALLOW_EXTERNAL_API | Whether or not to allow External API access | false |
+| `config.cleanup_storyboards_days_old` | CONFIG_CLEANUP_STORYBOARDS_DAYS_OLD | How many days back to clean up old storyboards, e.g. storyboards older than 180 days. Triggered manually by Admins . | 180 |
+| `config.cleanup_guests_days_old` | CONFIG_CLEANUP_GUESTS_DAYS_OLD | How many days back to clean up old guests, e.g. guests older than 180 days.  Triggered manually by Admins. | 180 |
 | `auth.method`              | AUTH_METHOD         | Choose `normal` or `ldap` as authentication method.  See separate section on LDAP configuration. | normal |
 
 ## Avatar Service configuration

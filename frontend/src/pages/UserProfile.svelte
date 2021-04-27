@@ -5,6 +5,7 @@
     import SolidButton from '../components/SolidButton.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import UserAvatar from '../components/UserAvatar.svelte'
+    import DeleteUser from '../components/DeleteUser.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
@@ -20,6 +21,7 @@
     let userProfile = {}
     let apiKeys = []
     let showApiKeyCreate = false
+    let showAccountDeletion = false
 
     let updatePassword = false
     let userPassword1 = ''
@@ -211,6 +213,27 @@
 
     function toggleCreateApiKey() {
         showApiKeyCreate = !showApiKeyCreate
+    }
+
+    function handleDeleteAccount() {
+        xfetch(`/api/user/${$user.id}`, { method: "DELETE" })
+            .then(function() {
+                user.delete()
+
+                eventTag('delete_user', 'engagement', 'success')
+
+                router.route(appRoutes.landing)
+            })
+            .catch(function() {
+                notifications.danger(
+                    'Error encountered attempting to delete your account.'
+                )
+                eventTag('delete_user', 'engagement', 'failure')
+            })
+    }
+
+    function toggleDeleteAccount() {
+        showAccountDeletion = !showAccountDeletion
     }
 
     onMount(() => {
@@ -490,15 +513,27 @@
                     </table>
                 </div>
             </div>
-
-            {#if showApiKeyCreate}
-                <CreateApiKey
-                    {toggleCreateApiKey}
-                    handleApiKeyCreate="{getApiKeys}"
-                    {notifications}
-                    {xfetch}
-                    {eventTag} />
-            {/if}
         {/if}
+
+        <div class="w-full text-center">
+            <HollowButton onClick={toggleDeleteAccount} color="red">
+                Delete Account
+            </HollowButton>
+        </div>
     </div>
+
+    {#if showApiKeyCreate}
+        <CreateApiKey
+            {toggleCreateApiKey}
+            handleApiKeyCreate="{getApiKeys}"
+            {notifications}
+            {xfetch}
+            {eventTag} />
+    {/if}
+
+    {#if showAccountDeletion}
+        <DeleteUser
+            {toggleDeleteAccount}
+            {handleDeleteAccount} />
+    {/if}
 </PageLayout>

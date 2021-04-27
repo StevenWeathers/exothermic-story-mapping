@@ -10,7 +10,7 @@
     export let notifications
     export let storyboardId
 
-    const authMethod = appConfig.AuthMethod
+    const { AllowRegistration, AuthMethod } = appConfig
 
     let userEmail = ''
     let userPassword = ''
@@ -102,6 +102,12 @@
                         md:leading-tight text-center">
                         Login
                     </div>
+                    {#if storyboardId && AllowRegistration}
+                        <div class="font-bold text-m md:text-l mb-2 md:mb-6
+                        md:leading-tight text-center">
+                            or <a href="${appRoutes.register}/${storyboardId}" class="font-bold text-blue-500 hover:text-blue-800">Regiser</a> to join the Storyboard
+                        </div>
+                    {/if}
                     <div class="mb-4">
                         <label
                             class="block text-gray-700 text-sm font-bold mb-2"
@@ -141,7 +147,7 @@
                     </div>
 
                     <div class="text-right">
-                        {#if authMethod === 'normal'}
+                        {#if AuthMethod === 'normal'}
                             <button
                                 type="button"
                                 class="inline-block align-baseline font-bold

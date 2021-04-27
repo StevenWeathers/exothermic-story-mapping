@@ -307,3 +307,16 @@ func (d *Database) VerifyUserAccount(VerifyID string) error {
 
 	return nil
 }
+
+// DeleteUser attempts to delete a user
+func (d *Database) DeleteUser(UserID string) error {
+	if _, err := d.db.Exec(
+		`call delete_user($1);`,
+		UserID,
+	); err != nil {
+		log.Println(err)
+		return errors.New("error attempting to delete user")
+	}
+
+	return nil
+}

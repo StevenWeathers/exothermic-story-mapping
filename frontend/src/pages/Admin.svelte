@@ -14,6 +14,7 @@
     export let notifications
     export let eventTag
 
+    const { CleanupGuestsDaysOld, CleanupStoryboardsDaysOld } = appConfig
     const usersPageLimit = 100
 
     let appStats = {
@@ -50,14 +51,16 @@
             })
     }
 
-    xfetch('/api/admin/stats')
-        .then(res => res.json())
-        .then(function(result) {
-            appStats = result
-        })
-        .catch(function(error) {
-            notifications.danger('Error getting application stats')
-        })
+    function getAppStats() {
+        xfetch('/api/admin/stats')
+            .then(res => res.json())
+            .then(function(result) {
+                appStats = result
+            })
+            .catch(function(error) {
+                notifications.danger('Error getting application stats')
+            })
+    }
 
     function getUsers() {
         const usersOffset = (usersPage - 1) * usersPageLimit
@@ -109,6 +112,32 @@
         }
     }
 
+    function cleanStoryboards() {
+        xfetch('/api/admin/clean-storyboards', { method: 'DELETE' })
+            .then(function() {
+                eventTag('admin_clean_storyboards', 'engagement', 'success')
+
+                getAppStats()
+            })
+            .catch(function(error) {
+                notifications.danger('Error encountered cleaning storyboards')
+                eventTag('admin_clean_storyboards', 'engagement', 'failure')
+            })
+    }
+
+    function cleanGuests() {
+        xfetch('/api/admin/clean-guests', { method: 'DELETE' })
+            .then(function() {
+                eventTag('admin_clean_guests', 'engagement', 'success')
+
+                getAppStats()
+            })
+            .catch(function(error) {
+                notifications.danger('Error encountered cleaning guests')
+                eventTag('admin_clean_guests', 'engagement', 'failure')
+            })
+    }
+
     const changePage = evt => {
         usersPage = evt.detail
         getusers()
@@ -116,12 +145,13 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route(appRoutes.register)
+            router.route(appRoutes.login)
         }
         if ($user.type !== 'ADMIN') {
             router.route(appRoutes.landing)
         }
 
+        getAppStats()
         getUsers()
     })
 </script>
@@ -148,6 +178,24 @@
                     <div class="mb-2 font-bold">Storyboards</div>
                     {appStats.storyboardCount}
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-center mb-4">
+        <div class="w-full">
+            <div
+            class="text-center p-2 md:p-4 bg-white shadow-lg rounded text-xl">
+                <div class="text-2xl md:text-3xl font-bold text-center mb-4">
+                    Maintenance
+                </div>
+                <HollowButton onClick="{cleanGuests}" color="red">
+                    Clean Guests older than {CleanupGuestsDaysOld} days
+                </HollowButton>
+
+                <HollowButton onClick="{cleanStoryboards}" color="red">
+                    Clean Storyboards older than {CleanupStoryboardsDaysOld} days
+                </HollowButton>
             </div>
         </div>
     </div>
