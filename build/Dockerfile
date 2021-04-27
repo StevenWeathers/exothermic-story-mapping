@@ -36,9 +36,8 @@ COPY ./schema.sql $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping
 COPY --from=builderNode /webapp/dist $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/dist
 # Set working dir
 WORKDIR $GOPATH/src/github.com/stevenweathers/exothermic-story-mapping/
+# Fetch dependencies
 RUN go mod download
-# Bundle the static assets
-RUN pkger
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s" -ldflags "-X main.version=$BUILD_VERSION" -o /go/bin/exothermic
 ############################
