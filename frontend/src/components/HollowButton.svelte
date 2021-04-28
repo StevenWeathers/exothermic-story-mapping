@@ -71,6 +71,12 @@
     .btn-hollow-gray:hover {
         @apply bg-gray-600;
     }
+    .btn-hollow-indigo {
+        @apply border-indigo-500 text-indigo-500;
+    }
+    .btn-hollow-indigo:hover {
+        @apply bg-indigo-600;
+    }
 </style>
 
 {#if href === ''}

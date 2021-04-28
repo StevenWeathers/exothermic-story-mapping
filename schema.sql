@@ -90,17 +90,17 @@ CREATE TABLE IF NOT EXISTS api_keys (
     UNIQUE(user_id, name)
 );
 
--- CREATE TABLE IF NOT EXISTS storyboard_persona (
---     id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
---     storyboard_id UUID NOT NULL,
---     name VARCHAR(256) NOT NULL,
---     role VARCHAR(256),
---     description TEXT,
---     created_date TIMESTAMP DEFAULT NOW(),
---     updated_date TIMESTAMP DEFAULT NOW(),
---     UNIQUE(storyboard_id, name),
---     CONSTRAINT sp_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE
--- );
+CREATE TABLE IF NOT EXISTS storyboard_persona (
+    id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+    storyboard_id UUID NOT NULL,
+    name VARCHAR(256) NOT NULL,
+    role VARCHAR(256),
+    description TEXT,
+    created_date TIMESTAMP DEFAULT NOW(),
+    updated_date TIMESTAMP DEFAULT NOW(),
+    UNIQUE(storyboard_id, name),
+    CONSTRAINT sp_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE
+);
 
 CREATE TABLE IF NOT EXISTS story_comment (
     id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -516,38 +516,38 @@ $$;
 -- END;
 -- $$;
 
--- -- Add a Persona to Storyboard --
--- CREATE OR REPLACE PROCEDURE persona_add(storyboardId UUID, personaName VARCHAR(256), personaRole VARCHAR(256), personaDescription TEXT)
--- LANGUAGE plpgsql AS $$
--- BEGIN
---     INSERT INTO story_comment (storyboard_id, story_id, user_id, comment) VALUES (storyboardId, storyId, userId, comment);
---     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+-- Add a Persona to Storyboard --
+CREATE OR REPLACE PROCEDURE persona_add(storyboardId UUID, personaName VARCHAR(256), personaRole VARCHAR(256), personaDescription TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    INSERT INTO storyboard_persona (storyboard_id, name, role, description) VALUES (storyboardId, personaName, personaRole, personaDescription);
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
---     COMMIT;
--- END;
--- $$;
+    COMMIT;
+END;
+$$;
 
--- -- Edit a Storyboard Persona --
--- CREATE OR REPLACE PROCEDURE persona_edit(storyboardId UUID, personaId UUID, personaName VARCHAR(256), personaRole VARCHAR(256), personaDescription TEXT)
--- LANGUAGE plpgsql AS $$
--- BEGIN
---     UPDATE storyboard_persona SET name = personaName, role = personaRole, description = personaDescription, updated_date = NOW() WHERE id = personaId;
---     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+-- Edit a Storyboard Persona --
+CREATE OR REPLACE PROCEDURE persona_edit(storyboardId UUID, personaId UUID, personaName VARCHAR(256), personaRole VARCHAR(256), personaDescription TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE storyboard_persona SET name = personaName, role = personaRole, description = personaDescription, updated_date = NOW() WHERE id = personaId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
---     COMMIT;
--- END;
--- $$;
+    COMMIT;
+END;
+$$;
 
--- -- Delete a Storyboard Persona --
--- CREATE OR REPLACE PROCEDURE persona_delete(storyboardId UUID, personaId UUID)
--- LANGUAGE plpgsql AS $$
--- BEGIN
---     DELETE FROM storyboard_persona WHERE id = personaId;
---     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+-- Delete a Storyboard Persona --
+CREATE OR REPLACE PROCEDURE persona_delete(storyboardId UUID, personaId UUID)
+LANGUAGE plpgsql AS $$
+BEGIN
+    DELETE FROM storyboard_persona WHERE id = personaId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
---     COMMIT;
--- END;
--- $$;
+    COMMIT;
+END;
+$$;
 
 -- Reset User Password --
 CREATE OR REPLACE PROCEDURE reset_user_password(resetId UUID, userPassword TEXT)
@@ -761,6 +761,23 @@ BEGIN
 		LEFT JOIN users w ON su.user_id = w.id
 		WHERE su.storyboard_id = storyboardId
 		ORDER BY w.name;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get Storyboard Personas
+DROP FUNCTION IF EXISTS get_storyboard_personas(uuid);
+CREATE FUNCTION get_storyboard_personas(storyboardId UUID) RETURNS table (
+    id UUID,
+    name VARCHAR(256),
+    role VARCHAR(256),
+    description TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT
+			p.id, p.name, p.role, p.description
+		FROM storyboard_persona p
+		WHERE p.storyboard_id = storyboardId;
 END;
 $$ LANGUAGE plpgsql;
 

@@ -38,11 +38,14 @@ func (d *Database) GetStoryboard(StoryboardID string) (*Storyboard, error) {
 		Users:          make([]*StoryboardUser, 0),
 		Goals:          make([]*StoryboardGoal, 0),
 		ColorLegend:    make([]*Color, 0),
+		Personas:       make([]*StoryboardPersona, 0),
 	}
 
 	// get storyboard
 	e := d.db.QueryRow(
-		"SELECT id, name, owner_id, color_legend FROM storyboard WHERE id = $1",
+		`SELECT
+			id, name, owner_id, color_legend
+		FROM storyboard WHERE id = $1`,
 		StoryboardID,
 	).Scan(
 		&b.StoryboardID,
@@ -62,6 +65,7 @@ func (d *Database) GetStoryboard(StoryboardID string) (*Storyboard, error) {
 
 	b.Users = d.GetStoryboardUsers(StoryboardID)
 	b.Goals = d.GetStoryboardGoals(StoryboardID)
+	b.Personas = d.GetStoryboardPersonas(StoryboardID)
 
 	return b, nil
 }
@@ -160,6 +164,28 @@ func (d *Database) GetStoryboardUsers(StoryboardID string) []*StoryboardUser {
 	}
 
 	return users
+}
+
+// GetStoryboardPersonas retrieves the personas for a given storyboard from db
+func (d *Database) GetStoryboardPersonas(StoryboardID string) []*StoryboardPersona {
+	var personas = make([]*StoryboardPersona, 0)
+	rows, err := d.db.Query(
+		`SELECT * FROM get_storyboard_personas($1);`,
+		StoryboardID,
+	)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var p StoryboardPersona
+			if err := rows.Scan(&p.PersonaID, &p.Name, &p.Role, &p.Description); err != nil {
+				log.Println(err)
+			} else {
+				personas = append(personas, &p)
+			}
+		}
+	}
+
+	return personas
 }
 
 // AddUserToStoryboard adds a user by ID to the storyboard by ID
@@ -275,67 +301,67 @@ func (d *Database) DeleteStoryboard(StoryboardID string, userID string) error {
 	return nil
 }
 
-// // AddPersona adds a persona to a storyboard
-// func (d *Database) AddPersona(StoryboardID string, UserID string, Name string, Role string, Description string) ([]*StoryboardGoal, error) {
-// 	err := d.ConfirmOwner(StoryboardID, UserID)
-// 	if err != nil {
-// 		return nil, errors.New("Incorrect permissions")
-// 	}
+// AddPersona adds a persona to a storyboard
+func (d *Database) AddPersona(StoryboardID string, UserID string, Name string, Role string, Description string) ([]*StoryboardPersona, error) {
+	err := d.ConfirmOwner(StoryboardID, UserID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
 
-// 	if _, err := d.db.Exec(
-// 		`call persona_add($1, $2, $3, $4);`,
-// 		StoryboardID,
-// 		Name,
-// 		Role,
-// 		Description,
-// 	); err != nil {
-// 		log.Println(err)
-// 	}
+	if _, err := d.db.Exec(
+		`call persona_add($1, $2, $3, $4);`,
+		StoryboardID,
+		Name,
+		Role,
+		Description,
+	); err != nil {
+		log.Println(err)
+	}
 
-// 	goals := d.GetStoryboardGoals(StoryboardID)
+	personas := d.GetStoryboardPersonas(StoryboardID)
 
-// 	return goals, nil
-// }
+	return personas, nil
+}
 
-// // UpdatePersona updates a storyboard persona
-// func (d *Database) UpdatePersona(StoryboardID string, PersonaID string, UserID string, Name string, Role string, Description string) ([]*StoryboardGoal, error) {
-// 	err := d.ConfirmOwner(StoryboardID, UserID)
-// 	if err != nil {
-// 		return nil, errors.New("Incorrect permissions")
-// 	}
+// UpdatePersona updates a storyboard persona
+func (d *Database) UpdatePersona(StoryboardID string, UserID string, PersonaID string, Name string, Role string, Description string) ([]*StoryboardPersona, error) {
+	err := d.ConfirmOwner(StoryboardID, UserID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
 
-// 	if _, err := d.db.Exec(
-// 		`call persona_edit($1, $2, $3, $4, $5);`,
-// 		StoryboardID,
-// 		PersonaID,
-// 		Name,
-// 		Role,
-// 		Description,
-// 	); err != nil {
-// 		log.Println(err)
-// 	}
+	if _, err := d.db.Exec(
+		`call persona_edit($1, $2, $3, $4, $5);`,
+		StoryboardID,
+		PersonaID,
+		Name,
+		Role,
+		Description,
+	); err != nil {
+		log.Println(err)
+	}
 
-// 	goals := d.GetStoryboardGoals(StoryboardID)
+	personas := d.GetStoryboardPersonas(StoryboardID)
 
-// 	return goals, nil
-// }
+	return personas, nil
+}
 
-// // DeletePersona deletes a storyboard persona
-// func (d *Database) DeletePersona(StoryboardID string, PersonaID string, UserID string) ([]*StoryboardGoal, error) {
-// 	err := d.ConfirmOwner(StoryboardID, UserID)
-// 	if err != nil {
-// 		return nil, errors.New("Incorrect permissions")
-// 	}
+// DeletePersona deletes a storyboard persona
+func (d *Database) DeletePersona(StoryboardID string, UserID string, PersonaID string) ([]*StoryboardPersona, error) {
+	err := d.ConfirmOwner(StoryboardID, UserID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
 
-// 	if _, err := d.db.Exec(
-// 		`call persona_delete($1, $2, $3);`,
-// 		StoryboardID,
-// 		PersonaID,
-// 	); err != nil {
-// 		log.Println(err)
-// 	}
+	if _, err := d.db.Exec(
+		`call persona_delete($1, $2);`,
+		StoryboardID,
+		PersonaID,
+	); err != nil {
+		log.Println(err)
+	}
 
-// 	goals := d.GetStoryboardGoals(StoryboardID)
+	personas := d.GetStoryboardPersonas(StoryboardID)
 
-// 	return goals, nil
-// }
+	return personas, nil
+}

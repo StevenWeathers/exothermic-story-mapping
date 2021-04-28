@@ -36,12 +36,13 @@ type StoryboardUser struct {
 
 // Storyboard A story mapping board
 type Storyboard struct {
-	StoryboardID   string            `json:"id"`
-	OwnerID        string            `json:"owner_id"`
-	StoryboardName string            `json:"name"`
-	Users          []*StoryboardUser `json:"users"`
-	Goals          []*StoryboardGoal `json:"goals"`
-	ColorLegend    []*Color          `json:"color_legend"`
+	StoryboardID   string               `json:"id"`
+	OwnerID        string               `json:"owner_id"`
+	StoryboardName string               `json:"name"`
+	Users          []*StoryboardUser    `json:"users"`
+	Goals          []*StoryboardGoal    `json:"goals"`
+	ColorLegend    []*Color             `json:"color_legend"`
+	Personas       []*StoryboardPersona `json:"personas"`
 }
 
 // StoryboardGoal A row in a story mapping board
@@ -78,6 +79,14 @@ type StoryComment struct {
 	UserID     string `json:"user_id"`
 	Comment    string `json:"comment"`
 	CreateDate string `json:"created_date"`
+}
+
+// StoryboardPersona A storyboards personas
+type StoryboardPersona struct {
+	PersonaID   string `json:"id"`
+	Name        string `json:"name"`
+	Role        string `json:"role"`
+	Description string `json:"description"`
 }
 
 // User aka user

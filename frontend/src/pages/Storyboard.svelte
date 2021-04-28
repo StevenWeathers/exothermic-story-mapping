@@ -10,6 +10,7 @@
     import ColumnForm from '../components/ColumnForm.svelte'
     import StoryForm from '../components/StoryForm.svelte'
     import ColorLegendForm from '../components/ColorLegendForm.svelte'
+    import PersonasForm from '../components/PersonasForm.svelte'
     import UsersIcon from '../components/icons/UsersIcon.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import EditIcon from '../components/icons/EditIcon.svelte'
@@ -39,11 +40,14 @@
         owner_id: '',
         goals: [],
         users: [],
-        colorLegend: []
+        colorLegend: [],
+        personas: []
     }
     let showUsers = false
     let showColorLegend = false
     let showColorLegendForm = false
+    let showPersonas = false
+    let showPersonasForm = null
     let editColumn = null
     let activeStory = null
 
@@ -232,6 +236,9 @@
             case 'story_deleted':
                 storyboard.goals = JSON.parse(parsedEvent.value)
                 break
+            case 'personas_updated':
+                storyboard.personas = JSON.parse(parsedEvent.value)
+                break
             case 'storyboard_conceded':
                 // storyboard over, goodbye.
                 router.route(appRoutes.storyboards)
@@ -320,14 +327,23 @@
 
     function toggleUsersPanel() {
         showColorLegend = false
+        showPersonas = false
         showUsers = !showUsers
         eventTag('show_users', 'storyboard', `show: ${showUsers}`)
     }
 
     function toggleColorLegend() {
         showUsers = false
+        showPersonas = false
         showColorLegend = !showColorLegend
         eventTag('show_colorlegend', 'storyboard', `show: ${showColorLegend}`)
+    }
+
+    function togglePersonas() {
+        showUsers = false
+        showColorLegend = false
+        showPersonas = !showPersonas
+        eventTag('show_personas', 'storyboard', `show: ${showPersonas}`)
     }
 
     function toggleColumnEdit(column) {
@@ -340,6 +356,12 @@
         showColorLegend = false
         showColorLegendForm = !showColorLegendForm
         eventTag('show_edit_legend', 'storyboard', `show: ${showColorLegendForm}`)
+    }
+
+    const toggleEditPersona  = persona => () => {
+        showPersonas = false
+        showPersonasForm = showPersonasForm != null ? null : persona
+        eventTag('show_edit_personas', 'storyboard', `show: ${showPersonasForm}`)
     }
 
     let showAddGoal = false
@@ -387,6 +409,21 @@
     const addStoryComment = (storyId, comment) => {
         sendSocketEvent('add_story_comment', JSON.stringify({ storyId, comment }))
         eventTag('story_add_comment', 'storyboard', '')
+    }
+
+    const handlePersonaAdd = persona => {
+        sendSocketEvent('add_persona', JSON.stringify(persona))
+        eventTag('persona_add', 'storyboard', '')
+    }
+
+    const handlePersonaRevision = persona => {
+        sendSocketEvent('revise_persona', JSON.stringify(persona))
+        eventTag('persona_revise', 'storyboard', '')
+    }
+
+    const handleDeletePersona = personaId => () => {
+        sendSocketEvent('delete_persona', personaId)
+        eventTag('persona_delete', 'storyboard', '')
     }
 
     const toggleStoryForm = story => () => {
@@ -467,10 +504,10 @@
 
 {#if storyboard.name && !socketReconnecting && !socketError}
     <div class="px-6 py-2 bg-white flex flex-wrap">
-        <div class="w-2/3">
+        <div class="w-1/3">
             <h1 class="text-3xl font-bold leading-tight">{storyboard.name}</h1>
         </div>
-        <div class="w-1/3 text-right relative">
+        <div class="w-2/3 text-right">
             <div>
                 {#if storyboard.owner_id === $user.id}
                     <HollowButton
@@ -490,73 +527,126 @@
                         Leave Storyboard
                     </HollowButton>
                 {/if}
-                <HollowButton
-                    color="teal"
-                    additionalClasses="transition ease-in-out duration-150"
-                    onClick="{toggleColorLegend}">
-                    Color Legend
-                    <DownCarrotIcon additionalClasses="ml-1" />
-                </HollowButton>
-                <HollowButton
-                    color="gray"
-                    additionalClasses="transition ease-in-out duration-150"
-                    onClick="{toggleUsersPanel}">
-                    <UsersIcon
-                        additionalClasses="mr-1"
-                        height="18"
-                        width="18" />
-                    Users
-                    <DownCarrotIcon additionalClasses="ml-1" />
-                </HollowButton>
-            </div>
-            {#if showUsers}
-                <div
-                    class="origin-top-right absolute right-0 mt-1 w-64
-                    rounded-md shadow-lg text-left">
-                    <div class="rounded-md bg-white shadow-xs">
-                        {#each storyboard.users as usr, index (usr.id)}
-                            {#if usr.active}
-                                <UserCard
-                                    user="{usr}"
-                                    {sendSocketEvent}
-                                    showBorder="{index != storyboard.users.length - 1}" />
-                            {/if}
-                        {/each}
+                <div class="inline-block relative">
+                    <HollowButton
+                        color="indigo"
+                        additionalClasses="transition ease-in-out duration-150"
+                        onClick="{togglePersonas}">
+                        Persona's
+                        <DownCarrotIcon additionalClasses="ml-1" />
+                    </HollowButton>
+                    {#if showPersonas}
+                        <div
+                            class="origin-top-right absolute right-0 mt-1 w-64
+                            rounded-md shadow-lg text-left">
+                            <div class="rounded-md bg-white shadow-xs">
+                                <ul class="p-2">
+                                    {#each storyboard.personas as persona}
+                                        <li class="mb-1 w-full">
+                                            <div>
+                                                <span class="font-bold">{persona.name}</span>
+                                                {#if storyboard.owner_id === $user.id}
+                                                    &nbsp;|&nbsp;
+                                                    <button
+                                                        on:click="{toggleEditPersona(persona)}"
+                                                        class="text-orange-500 hover:text-orange-800"
+                                                    >Edit</button>
+                                                    &nbsp;|&nbsp;
+                                                    <button
+                                                        on:click="{handleDeletePersona(persona.id)}"
+                                                        class="text-red-500 hover:text-red-800"
+                                                    >Delete</button>
+                                                {/if}
+                                            </div>
+                                            <span class="text-sm">{persona.role}</span>
+                                        </li>
+                                    {/each}
+                                </ul>
 
-                        <div class="p-2">
-                            <InviteUser
-                                {hostname}
-                                storyboardId="{storyboard.id}" />
-                        </div>
-                    </div>
-                </div>
-            {/if}
-            {#if showColorLegend}
-                <div
-                    class="origin-top-right absolute right-0 mt-1 w-64
-                    rounded-md shadow-lg text-left">
-                    <div class="rounded-md bg-white shadow-xs">
-                        <ul class="p-2">
-                            {#each storyboard.color_legend as color}
-                                <li class="mb-1 flex w-full">
-                                    <span class="p-4 mr-2 inline-block colorcard-{color.color}"></span>
-                                    <span class="inline-block align-middle {color.legend === '' ? 'text-gray-300' : 'text-gray-600'}">{color.legend || 'legend not specified'}</span>
-                                </li>
-                            {/each}
-                        </ul>
-
-                        {#if storyboard.owner_id === $user.id}
-                            <div class="p-2">
-                                <HollowButton
-                                    color="orange"
-                                    onClick="{toggleEditLegend}">
-                                    Edit Legend
-                                </HollowButton>
+                                {#if storyboard.owner_id === $user.id}
+                                    <div class="p-2 text-right">
+                                        <HollowButton
+                                            color="green"
+                                            onClick="{toggleEditPersona({ id: '', name: '', role: '', description: '' })}">
+                                            Add Persona
+                                        </HollowButton>
+                                    </div>
+                                {/if}
                             </div>
-                        {/if}
-                    </div>
+                        </div>
+                    {/if}
                 </div>
-            {/if}
+                <div class="inline-block relative">
+                    <HollowButton
+                        color="teal"
+                        additionalClasses="transition ease-in-out duration-150"
+                        onClick="{toggleColorLegend}">
+                        Color Legend
+                        <DownCarrotIcon additionalClasses="ml-1" />
+                    </HollowButton>
+                    {#if showColorLegend}
+                        <div
+                            class="origin-top-right absolute right-0 mt-1 w-64
+                            rounded-md shadow-lg text-left">
+                            <div class="rounded-md bg-white shadow-xs">
+                                <ul class="p-2">
+                                    {#each storyboard.color_legend as color}
+                                        <li class="mb-1 flex w-full">
+                                            <span class="p-4 mr-2 inline-block colorcard-{color.color}"></span>
+                                            <span class="inline-block align-middle {color.legend === '' ? 'text-gray-300' : 'text-gray-600'}">{color.legend || 'legend not specified'}</span>
+                                        </li>
+                                    {/each}
+                                </ul>
+
+                                {#if storyboard.owner_id === $user.id}
+                                    <div class="p-2 text-right">
+                                        <HollowButton
+                                            color="orange"
+                                            onClick="{toggleEditLegend}">
+                                            Edit Legend
+                                        </HollowButton>
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+                <div class="inline-block relative">
+                    <HollowButton
+                        color="gray"
+                        additionalClasses="transition ease-in-out duration-150"
+                        onClick="{toggleUsersPanel}">
+                        <UsersIcon
+                            additionalClasses="mr-1"
+                            height="18"
+                            width="18" />
+                        Users
+                        <DownCarrotIcon additionalClasses="ml-1" />
+                    </HollowButton>
+                    {#if showUsers}
+                        <div
+                            class="origin-top-right absolute right-0 mt-1 w-64
+                            rounded-md shadow-lg text-left">
+                            <div class="rounded-md bg-white shadow-xs">
+                                {#each storyboard.users as usr, index (usr.id)}
+                                    {#if usr.active}
+                                        <UserCard
+                                            user="{usr}"
+                                            {sendSocketEvent}
+                                            showBorder="{index != storyboard.users.length - 1}" />
+                                    {/if}
+                                {/each}
+
+                                <div class="p-2">
+                                    <InviteUser
+                                        {hostname}
+                                        storyboardId="{storyboard.id}" />
+                                </div>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+            </div>
         </div>
     </div>
     {#each storyboard.goals as goal, goalIndex (goal.id)}
@@ -637,7 +727,7 @@
                             data-columnid="{goalColumn.id}">
                             {#each goalColumn.stories as story (story.id)}
                                 <li
-                                    class="max-w-xs shadow bg-white border-l-4 story-{story.color} border my-4"
+                                    class="max-w-xs shadow bg-white border-l-4 story-{story.color} border my-4 cursor-pointer"
                                     style="list-style: none;"
                                     data-goalid="{goal.id}"
                                     data-columnid="{goalColumn.id}"
@@ -734,4 +824,12 @@
         {handleLegendRevision}
         {toggleEditLegend}
         colorLegend={storyboard.color_legend} />
+{/if}
+
+{#if showPersonasForm}
+    <PersonasForm
+        toggleEditPersona={toggleEditPersona()}
+        persona={showPersonasForm}
+        {handlePersonaAdd}
+        {handlePersonaRevision} />
 {/if}

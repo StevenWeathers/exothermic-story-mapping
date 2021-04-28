@@ -312,50 +312,45 @@ func (s subscription) readPump(srv *server) {
 		// 	}
 		// 	updatedGoals, _ := json.Marshal(goals)
 		// 	msg = CreateSocketEvent("story_updated", string(updatedGoals), "")
-		// case "add_persona":
-		// 	var rs struct {
-		// 		Name        string `json:"name"`
-		// 		Role        string `json:"role"`
-		// 		Description string `json:"description"`
-		// 	}
-		// 	json.Unmarshal([]byte(keyVal["value"]), &rs)
+		case "add_persona":
+			var rs struct {
+				Name        string `json:"name"`
+				Role        string `json:"role"`
+				Description string `json:"description"`
+			}
+			json.Unmarshal([]byte(keyVal["value"]), &rs)
 
-		// 	goals, err := srv.database.AddPersona(storyboardID, userID, rs.Name, rs.Role, rs.Description)
-		// 	if err != nil {
-		// 		badEvent = true
-		// 		break
-		// 	}
-		// 	updatedGoals, _ := json.Marshal(goals)
-		// 	msg = CreateSocketEvent("personas_updated", string(updatedGoals), "")
-		// case "update_persona":
-		// 	var rs struct {
-		// 		PersonaID   string `json:"personaId"`
-		// 		Name        string `json:"name"`
-		// 		Role        string `json:"role"`
-		// 		Description string `json:"description"`
-		// 	}
-		// 	json.Unmarshal([]byte(keyVal["value"]), &rs)
+			personas, err := srv.database.AddPersona(storyboardID, userID, rs.Name, rs.Role, rs.Description)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedPersonas, _ := json.Marshal(personas)
+			msg = CreateSocketEvent("personas_updated", string(updatedPersonas), "")
+		case "update_persona":
+			var rs struct {
+				PersonaID   string `json:"id"`
+				Name        string `json:"name"`
+				Role        string `json:"role"`
+				Description string `json:"description"`
+			}
+			json.Unmarshal([]byte(keyVal["value"]), &rs)
 
-		// 	goals, err := srv.database.UpdatePersona(storyboardID, userID, rs.PersonaID, rs.Name, rs.Role, rs.Description)
-		// 	if err != nil {
-		// 		badEvent = true
-		// 		break
-		// 	}
-		// 	updatedGoals, _ := json.Marshal(goals)
-		// 	msg = CreateSocketEvent("personas_updated", string(updatedGoals), "")
-		// case "delete_persona":
-		// 	var rs struct {
-		// 		PersonaID string `json:"personaId"`
-		// 	}
-		// 	json.Unmarshal([]byte(keyVal["value"]), &rs)
-
-		// 	goals, err := srv.database.DeletePersona(storyboardID, userID, rs.PersonaID)
-		// 	if err != nil {
-		// 		badEvent = true
-		// 		break
-		// 	}
-		// 	updatedGoals, _ := json.Marshal(goals)
-		// 	msg = CreateSocketEvent("personas_updated", string(updatedGoals), "")
+			personas, err := srv.database.UpdatePersona(storyboardID, userID, rs.PersonaID, rs.Name, rs.Role, rs.Description)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedPersonas, _ := json.Marshal(personas)
+			msg = CreateSocketEvent("personas_updated", string(updatedPersonas), "")
+		case "delete_persona":
+			personas, err := srv.database.DeletePersona(storyboardID, userID, keyVal["value"])
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedPersonas, _ := json.Marshal(personas)
+			msg = CreateSocketEvent("personas_updated", string(updatedPersonas), "")
 		case "promote_owner":
 			storyboard, err := srv.database.SetStoryboardOwner(storyboardID, userID, keyVal["value"])
 			if err != nil {
