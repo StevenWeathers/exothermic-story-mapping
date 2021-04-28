@@ -13,7 +13,7 @@ Each storyboard has the ability to add goals (rows), columns, and stories.
 
 ### **Uses WebSockets and [Svelte](https://svelte.dev/) frontend framework for a truly Reactive UI experience**
 
-![image](https://user-images.githubusercontent.com/846933/77712629-b8933500-6faa-11ea-9b9f-b64a1f648f98.png)
+![image](https://user-images.githubusercontent.com/846933/116486097-cfb1ef80-a85a-11eb-9769-96a9b5737ad9.png)
 
 # Running in production
 
