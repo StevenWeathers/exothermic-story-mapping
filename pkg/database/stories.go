@@ -162,22 +162,22 @@ func (d *Database) DeleteStoryboardStory(StoryboardID string, userID string, Sto
 	return goals, nil
 }
 
-// // AddStoryComment adds a comment to a story
-// func (d *Database) AddStoryComment(StoryboardID string, UserID string, StoryID string, Comment string) ([]*StoryboardGoal, error) {
-// 	if _, err := d.db.Exec(
-// 		`call story_comment_add($1, $2, $3, $4);`,
-// 		StoryboardID,
-// 		StoryID,
-// 		UserID,
-// 		Comment,
-// 	); err != nil {
-// 		log.Println(err)
-// 	}
+// AddStoryComment adds a comment to a story
+func (d *Database) AddStoryComment(StoryboardID string, UserID string, StoryID string, Comment string) ([]*StoryboardGoal, error) {
+	if _, err := d.db.Exec(
+		`call story_comment_add($1, $2, $3, $4);`,
+		StoryboardID,
+		StoryID,
+		UserID,
+		Comment,
+	); err != nil {
+		log.Println(err)
+	}
 
-// 	goals := d.GetStoryboardGoals(StoryboardID)
+	goals := d.GetStoryboardGoals(StoryboardID)
 
-// 	return goals, nil
-// }
+	return goals, nil
+}
 
 // // UpdateStoryComment updates a story comment
 // func (d *Database) UpdateStoryComment(StoryboardID string, UserID string, commentID string, Comment string) ([]*StoryboardGoal, error) {

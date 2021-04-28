@@ -269,20 +269,20 @@ func (s subscription) readPump(srv *server) {
 			}
 			updatedGoals, _ := json.Marshal(goals)
 			msg = CreateSocketEvent("story_deleted", string(updatedGoals), "")
-		// case "add_story_comment":
-		// 	var rs struct {
-		// 		StoryID string `json:"storyId"`
-		// 		Comment string `json:"comment"`
-		// 	}
-		// 	json.Unmarshal([]byte(keyVal["value"]), &rs)
+		case "add_story_comment":
+			var rs struct {
+				StoryID string `json:"storyId"`
+				Comment string `json:"comment"`
+			}
+			json.Unmarshal([]byte(keyVal["value"]), &rs)
 
-		// 	goals, err := srv.database.AddStoryComment(storyboardID, userID, rs.StoryID, rs.Comment)
-		// 	if err != nil {
-		// 		badEvent = true
-		// 		break
-		// 	}
-		// 	updatedGoals, _ := json.Marshal(goals)
-		// 	msg = CreateSocketEvent("story_updated", string(updatedGoals), "")
+			goals, err := srv.database.AddStoryComment(storyboardID, userID, rs.StoryID, rs.Comment)
+			if err != nil {
+				badEvent = true
+				break
+			}
+			updatedGoals, _ := json.Marshal(goals)
+			msg = CreateSocketEvent("story_updated", string(updatedGoals), "")
 		// case "update_story_comment":
 		// 	var rs struct {
 		// 		StoryID   string `json:"storyId"`

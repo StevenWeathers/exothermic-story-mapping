@@ -14,6 +14,7 @@
     import HollowButton from '../components/HollowButton.svelte'
     import EditIcon from '../components/icons/EditIcon.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
+    import CommentIcon from '../components/icons/CommentIcon.svelte'
     import { appRoutes, PathPrefix } from '../config'
     import { user } from '../stores.js'
 
@@ -35,7 +36,7 @@
     let socketError = false
     let socketReconnecting = false
     let storyboard = {
-        ownerId: '',
+        owner_id: '',
         goals: [],
         users: [],
         colorLegend: []
@@ -205,6 +206,25 @@
                 break
             case 'story_updated':
                 storyboard.goals = JSON.parse(parsedEvent.value)
+                if (activeStory) {
+                    let activeStoryFound = false
+                    for (let goal of storyboard.goals) {
+                        for (let column of goal.columns) {
+                            for (let story of column.stories) {
+                                if (story.id === activeStory.id) {
+                                    activeStory = story
+                                    break
+                                }
+                            }
+                            if (activeStoryFound) {
+                                break
+                            }
+                        }
+                        if (activeStoryFound) {
+                            break
+                        }
+                    }
+                }
                 break
             case 'story_moved':
                 storyboard.goals = JSON.parse(parsedEvent.value)
@@ -299,11 +319,13 @@
     }
 
     function toggleUsersPanel() {
+        showColorLegend = false
         showUsers = !showUsers
         eventTag('show_users', 'storyboard', `show: ${showUsers}`)
     }
 
     function toggleColorLegend() {
+        showUsers = false
         showColorLegend = !showColorLegend
         eventTag('show_colorlegend', 'storyboard', `show: ${showColorLegend}`)
     }
@@ -315,6 +337,7 @@
     }
 
     function toggleEditLegend() {
+        showColorLegend = false
         showColorLegendForm = !showColorLegendForm
         eventTag('show_edit_legend', 'storyboard', `show: ${showColorLegendForm}`)
     }
@@ -359,6 +382,11 @@
     const handleLegendRevision = legend => {
         sendSocketEvent('revise_color_legend', JSON.stringify(legend))
         eventTag('color_legend_revise', 'storyboard', '')
+    }
+
+    const addStoryComment = (storyId, comment) => {
+        sendSocketEvent('add_story_comment', JSON.stringify({ storyId, comment }))
+        eventTag('story_add_comment', 'storyboard', '')
     }
 
     const toggleStoryForm = story => () => {
@@ -444,7 +472,7 @@
         </div>
         <div class="w-1/3 text-right relative">
             <div>
-                {#if storyboard.ownerId === $user.id}
+                {#if storyboard.owner_id === $user.id}
                     <HollowButton
                         color="green"
                         onClick="{toggleAddGoal()}"
@@ -509,7 +537,7 @@
                     rounded-md shadow-lg text-left">
                     <div class="rounded-md bg-white shadow-xs">
                         <ul class="p-2">
-                            {#each storyboard.colorLegend as color}
+                            {#each storyboard.color_legend as color}
                                 <li class="mb-1 flex w-full">
                                     <span class="p-4 mr-2 inline-block colorcard-{color.color}"></span>
                                     <span class="inline-block align-middle {color.legend === '' ? 'text-gray-300' : 'text-gray-600'}">{color.legend || 'legend not specified'}</span>
@@ -517,7 +545,7 @@
                             {/each}
                         </ul>
 
-                        {#if storyboard.ownerId === $user.id}
+                        {#if storyboard.owner_id === $user.id}
                             <div class="p-2">
                                 <HollowButton
                                     color="orange"
@@ -542,7 +570,7 @@
                     </div>
                 </div>
                 <div class="w-1/4 text-right">
-                    {#if storyboard.ownerId === $user.id}
+                    {#if storyboard.owner_id === $user.id}
                         <HollowButton
                             color="green"
                             onClick="{addStoryColumn(goal.id)}"
@@ -609,7 +637,7 @@
                             data-columnid="{goalColumn.id}">
                             {#each goalColumn.stories as story (story.id)}
                                 <li
-                                    class="max-w-xs h-24 shadow bg-white border-l-4 story-{story.color} border my-4"
+                                    class="max-w-xs shadow bg-white border-l-4 story-{story.color} border my-4"
                                     style="list-style: none;"
                                     data-goalid="{goal.id}"
                                     data-columnid="{goalColumn.id}"
@@ -617,13 +645,21 @@
                                     on:click="{toggleStoryForm(story)}">
                                     <div>
                                         <div>
-                                            <div class="h-16 text-sm overflow-hidden {story.closed ? "line-through" : ""}" title="{story.name}">
-                                                <div class="p-1">{story.name}</div>
+                                            <div class="h-20 p-1 text-sm overflow-hidden {story.closed ? "line-through" : ""}" title="{story.name}">
+                                                {story.name}
                                             </div>
                                             <div class="h-8">
-                                                <div class="flex p-1">
-                                                    <div class="w-1/2">{story.comments ? story.comments.length : ''}</div>
-                                                    <div class="w-1/2 text-right">{story.points > 0 ? story.points : ''}</div>
+                                                <div class="flex content-center p-1 text-sm">
+                                                    <div class="w-1/2 text-gray-600">
+                                                        {#if story.comments.length > 0}
+                                                        <span class="inline-block align-middle">{story.comments.length} <CommentIcon /></span>
+                                                        {/if}
+                                                    </div>
+                                                    <div class="w-1/2 text-right">
+                                                        {#if story.points > 0}
+                                                            <span class="px-2 bg-gray-300 inline-block align-middle">{story.points}</span>
+                                                        {/if}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -687,7 +723,9 @@
         updateName={storyUpdateName}
         updatePoints={storyUpdatePoints}
         updateClosed={storyUpdateClosed}
-        colorLegend={storyboard.colorLegend}
+        colorLegend={storyboard.color_legend}
+        addComment={addStoryComment}
+        users={storyboard.users}
     />
 {/if}
 
@@ -695,5 +733,5 @@
     <ColorLegendForm
         {handleLegendRevision}
         {toggleEditLegend}
-        colorLegend={storyboard.colorLegend} />
+        colorLegend={storyboard.color_legend} />
 {/if}

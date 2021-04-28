@@ -48,7 +48,7 @@
                             md:text-xl leading-tight">
                             {storyboard.name}
                             <div class="font-semibold md:text-sm text-gray-600">
-                                {#if $user.id === storyboard.ownerId}Owner{/if}
+                                {#if $user.id === storyboard.owner_id}Owner{/if}
                             </div>
                         </div>
                         <div class="w-full md:w-1/2 md:mb-0 md:text-right">

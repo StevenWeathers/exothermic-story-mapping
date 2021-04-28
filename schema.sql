@@ -102,18 +102,18 @@ CREATE TABLE IF NOT EXISTS api_keys (
 --     CONSTRAINT sp_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE
 -- );
 
--- CREATE TABLE IF NOT EXISTS story_comment (
---     id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
---     storyboard_id UUID NOT NULL,
---     story_id UUID NOT NULL,
---     comment TEXT,
---     user_id UUID NOT NULL,
---     created_date TIMESTAMP DEFAULT NOW(),
---     updated_date TIMESTAMP DEFAULT NOW(),
---     CONSTRAINT stc_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE,
---     CONSTRAINT stc_story_id FOREIGN KEY(story_id) REFERENCES storyboard_story(id) ON DELETE CASCADE,
---     CONSTRAINT stc_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
--- );
+CREATE TABLE IF NOT EXISTS story_comment (
+    id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+    storyboard_id UUID NOT NULL,
+    story_id UUID NOT NULL,
+    comment TEXT,
+    user_id UUID NOT NULL,
+    created_date TIMESTAMP DEFAULT NOW(),
+    updated_date TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT stc_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE,
+    CONSTRAINT stc_story_id FOREIGN KEY(story_id) REFERENCES storyboard_story(id) ON DELETE CASCADE,
+    CONSTRAINT stc_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
 --
 -- Table Alterations
@@ -477,16 +477,16 @@ BEGIN
 END;
 $$;
 
--- -- Add a comment to Storyboard Story --
--- CREATE OR REPLACE PROCEDURE story_comment_add(storyboardId UUID, storyId UUID, userId UUID, comment TEXT)
--- LANGUAGE plpgsql AS $$
--- BEGIN
---     INSERT INTO story_comment (storyboard_id, story_id, user_id, comment) VALUES (storyboardId, storyId, userId, comment);
---     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+-- Add a comment to Storyboard Story --
+CREATE OR REPLACE PROCEDURE story_comment_add(storyboardId UUID, storyId UUID, userId UUID, comment TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    INSERT INTO story_comment (storyboard_id, story_id, user_id, comment) VALUES (storyboardId, storyId, userId, comment);
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
     
---     COMMIT;
--- END;
--- $$;
+    COMMIT;
+END;
+$$;
 
 -- -- Edit a comment on a Storyboard Story --
 -- CREATE OR REPLACE PROCEDURE story_comment_edit(storyboardId UUID, commentId UUID, userId UUID, updatedComment TEXT)
@@ -716,10 +716,19 @@ BEGIN
             SELECT
                 sc.*,
                 COALESCE(
-                    json_agg(ss ORDER BY ss.sort_order) FILTER (WHERE ss.id IS NOT NULL), '[]'
+                    json_agg(stss ORDER BY stss.sort_order) FILTER (WHERE stss.id IS NOT NULL), '[]'
                 ) AS stories
             FROM storyboard_column sc
-            LEFT JOIN storyboard_story ss ON ss.column_id = sc.id
+            LEFT JOIN (
+                SELECT
+                    ss.*,
+                    COALESCE(
+                        json_agg(stcm ORDER BY stcm.created_date) FILTER (WHERE stcm.id IS NOT NULL), '[]'
+                    ) AS comments
+                FROM storyboard_story ss
+                LEFT JOIN story_comment stcm ON stcm.story_id = ss.id
+                GROUP BY ss.id
+            ) stss ON stss.column_id = sc.id
             GROUP BY sc.id
         ) t ON t.goal_id = sg.id
         WHERE sg.storyboard_id = storyboardId

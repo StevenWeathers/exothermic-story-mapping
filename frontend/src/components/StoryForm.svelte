@@ -1,7 +1,6 @@
 <script>
-    import SolidButton from './SolidButton.svelte'
     import CloseIcon from './icons/CloseIcon.svelte'
-import HollowButton from './HollowButton.svelte'
+    import HollowButton from './HollowButton.svelte'
 
     export let toggleStoryForm = () => {}
     export let updateContent = () => () => {}
@@ -10,9 +9,17 @@ import HollowButton from './HollowButton.svelte'
     export let updatePoints = () => () => {}
     export let updateClosed = () => () => {}
     export let deleteStory = () => () => {}
+    export let addComment = () => {}
 
     export let story = {}
     export let colorLegend = []
+    export let users = []
+    let userComment = ''
+
+    $: userMap = users.reduce((prev, usr) => {
+        prev[usr.id] = usr.name
+        return prev
+    }, {})
 
     function handleStoryDelete() {
         deleteStory(story.id)()
@@ -21,11 +28,16 @@ import HollowButton from './HollowButton.svelte'
 
     function markClosed() {
         updateClosed(story.id)(true)
-        toggleStoryForm()
     }
     function markOpen() {
         updateClosed(story.id)(false)
-        toggleStoryForm()
+    }
+
+    function handleCommentSubmit() {
+        if (userComment !== '') {
+            addComment(story.id, userComment)
+            userComment = ''
+        }
     }
 </script>
 
@@ -100,16 +112,34 @@ import HollowButton from './HollowButton.svelte'
                                 on:change="{updateContent(story.id)}"
                                 value="{story.content}"></textarea>
                         </div>
-                        <!-- <div class="mb-4">
-                            <div class="font-bold text-lg">Discussion</div>
+                        <div class="mb-4">
+                            <div class="font-bold text-lg text-gray-600">Discussion{story.comments ? ` (${story.comments.length})` : ''}</div>
+                            <div class="mb-2 w-full">
+                                <textarea
+                                    class="border-gray-200 border-2
+                                    appearance-none rounded w-full py-2 px-3 text-gray-700
+                                    leading-tight focus:outline-none
+                                    focus:border-purple-500 mb-2"
+                                    placeholder="Write a comment..."
+                                    bind:value={userComment}
+                                />
+                                <div class="text-right">
+                                    <HollowButton color="gray" onClick={handleCommentSubmit} disabled={userComment === ''}>Post comment</HollowButton>
+                                </div>
+                            </div>
                             <div>
                                 {#if story.comments}
                                     {#each story.comments as comment}
-                                        <div>{comment.comment}</div>
+                                        <div class="w-full mb-4">
+                                            <div class="text-sm">
+                                                <span class="font-bold">{userMap[comment.user_id]}</span>
+                                            </div>
+                                            <div>{comment.comment}</div>
+                                        </div>
                                     {/each}
                                 {/if}
                             </div>
-                        </div> -->
+                        </div>
                     </div>
                 </div>
                 <div class="w-1/4">
