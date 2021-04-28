@@ -55,11 +55,21 @@ type StoryboardColumn struct {
 
 // StoryboardStory A story in a storyboard goal column
 type StoryboardStory struct {
-	StoryID      string `json:"id"`
-	StoryName    string `json:"name"`
-	StoryContent string `json:"content"`
-	StoryColor   string `json:"color"`
-	SortOrder    int    `json:"sortOrder"`
+	StoryID      string          `json:"id"`
+	StoryName    string          `json:"name"`
+	StoryContent string          `json:"content"`
+	StoryColor   string          `json:"color"`
+	StoryPoints  int             `json:"points"`
+	StoryClosed  bool            `json:"closed"`
+	SortOrder    int             `json:"sortOrder"`
+	Comments     []*StoryComment `json:"comments"`
+}
+
+// StoryComment A story comment by a user
+type StoryComment struct {
+	StoryID string `json:"storyId"`
+	UserID  string `json:"userId"`
+	Comment string `json:"comment"`
 }
 
 // User aka user

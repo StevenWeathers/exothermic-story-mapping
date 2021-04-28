@@ -241,3 +241,68 @@ func (d *Database) DeleteStoryboard(StoryboardID string, userID string) error {
 
 	return nil
 }
+
+// // AddPersona adds a persona to a storyboard
+// func (d *Database) AddPersona(StoryboardID string, UserID string, Name string, Role string, Description string) ([]*StoryboardGoal, error) {
+// 	err := d.ConfirmOwner(StoryboardID, UserID)
+// 	if err != nil {
+// 		return nil, errors.New("Incorrect permissions")
+// 	}
+
+// 	if _, err := d.db.Exec(
+// 		`call persona_add($1, $2, $3, $4);`,
+// 		StoryboardID,
+// 		Name,
+// 		Role,
+// 		Description,
+// 	); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	goals := d.GetStoryboardGoals(StoryboardID)
+
+// 	return goals, nil
+// }
+
+// // UpdatePersona updates a storyboard persona
+// func (d *Database) UpdatePersona(StoryboardID string, PersonaID string, UserID string, Name string, Role string, Description string) ([]*StoryboardGoal, error) {
+// 	err := d.ConfirmOwner(StoryboardID, UserID)
+// 	if err != nil {
+// 		return nil, errors.New("Incorrect permissions")
+// 	}
+
+// 	if _, err := d.db.Exec(
+// 		`call persona_edit($1, $2, $3, $4, $5);`,
+// 		StoryboardID,
+// 		PersonaID,
+// 		Name,
+// 		Role,
+// 		Description,
+// 	); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	goals := d.GetStoryboardGoals(StoryboardID)
+
+// 	return goals, nil
+// }
+
+// // DeletePersona deletes a storyboard persona
+// func (d *Database) DeletePersona(StoryboardID string, PersonaID string, UserID string) ([]*StoryboardGoal, error) {
+// 	err := d.ConfirmOwner(StoryboardID, UserID)
+// 	if err != nil {
+// 		return nil, errors.New("Incorrect permissions")
+// 	}
+
+// 	if _, err := d.db.Exec(
+// 		`call persona_delete($1, $2, $3);`,
+// 		StoryboardID,
+// 		PersonaID,
+// 	); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	goals := d.GetStoryboardGoals(StoryboardID)
+
+// 	return goals, nil
+// }

@@ -90,12 +90,39 @@ CREATE TABLE IF NOT EXISTS api_keys (
     UNIQUE(user_id, name)
 );
 
+-- CREATE TABLE IF NOT EXISTS storyboard_persona (
+--     id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+--     storyboard_id UUID NOT NULL,
+--     name VARCHAR(256) NOT NULL,
+--     role VARCHAR(256),
+--     description TEXT,
+--     created_date TIMESTAMP DEFAULT NOW(),
+--     updated_date TIMESTAMP DEFAULT NOW(),
+--     UNIQUE(storyboard_id, name),
+--     CONSTRAINT sp_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE
+-- );
+
+-- CREATE TABLE IF NOT EXISTS story_comment (
+--     id UUID NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+--     storyboard_id UUID NOT NULL,
+--     story_id UUID NOT NULL,
+--     comment TEXT,
+--     user_id UUID NOT NULL,
+--     created_date TIMESTAMP DEFAULT NOW(),
+--     updated_date TIMESTAMP DEFAULT NOW(),
+--     CONSTRAINT stc_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE,
+--     CONSTRAINT stc_story_id FOREIGN KEY(story_id) REFERENCES storyboard_story(id) ON DELETE CASCADE,
+--     CONSTRAINT stc_user_id FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+-- );
+
 --
 -- Table Alterations
 --
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar VARCHAR(128) DEFAULT 'identicon';
 ALTER TABLE storyboard_user ADD COLUMN IF NOT EXISTS abandoned BOOL DEFAULT false;
+ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS points INTEGER;
+ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS closed BOOL DEFAULT false;
 
 DO $$
 BEGIN
@@ -272,6 +299,15 @@ BEGIN
 END;
 $$;
 
+-- Revise a Storyboard Column --
+CREATE OR REPLACE PROCEDURE revise_storyboard_column(storyBoardId UUID, columnId UUID, columnName VARCHAR(256))
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE storyboard_column SET name = columnName, updated_date = NOW() WHERE id = columnId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyBoardId;
+END;
+$$;
+
 -- Delete a Storyboard Column --
 CREATE OR REPLACE PROCEDURE delete_storyboard_column(columnId UUID)
 LANGUAGE plpgsql AS $$
@@ -327,6 +363,26 @@ LANGUAGE plpgsql AS $$
 DECLARE storyboardId UUID;
 BEGIN
     UPDATE storyboard_story SET color = storyColor, updated_date = NOW() WHERE id = storyId RETURNING storyboard_id INTO storyboardId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+END;
+$$;
+
+-- Revise a Storyboard Story Points --
+CREATE OR REPLACE PROCEDURE update_story_points(storyId UUID, updatedPoints INTEGER)
+LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
+BEGIN
+    UPDATE storyboard_story SET points = updatedPoints, updated_date = NOW() WHERE id = storyId RETURNING storyboard_id INTO storyboardId;
+    UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+END;
+$$;
+
+-- Revise a Storyboard Story Closed status --
+CREATE OR REPLACE PROCEDURE update_story_closed(storyId UUID, isClosed BOOL)
+LANGUAGE plpgsql AS $$
+DECLARE storyboardId UUID;
+BEGIN
+    UPDATE storyboard_story SET closed = isClosed, updated_date = NOW() WHERE id = storyId RETURNING storyboard_id INTO storyboardId;
     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
 END;
 $$;
@@ -410,6 +466,78 @@ BEGIN
     COMMIT;
 END;
 $$;
+
+-- -- Add a comment to Storyboard Story --
+-- CREATE OR REPLACE PROCEDURE story_comment_add(storyboardId UUID, storyId UUID, userId UUID, comment TEXT)
+-- LANGUAGE plpgsql AS $$
+-- BEGIN
+--     INSERT INTO story_comment (storyboard_id, story_id, user_id, comment) VALUES (storyboardId, storyId, userId, comment);
+--     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+    
+--     COMMIT;
+-- END;
+-- $$;
+
+-- -- Edit a comment on a Storyboard Story --
+-- CREATE OR REPLACE PROCEDURE story_comment_edit(storyboardId UUID, commentId UUID, userId UUID, updatedComment TEXT)
+-- LANGUAGE plpgsql AS $$
+-- BEGIN
+--     UPDATE story_comment SET comment = updatedComment, updated_date = NOW() WHERE id = commentId AND user_id = userId;
+--     IF NOT found THEN
+--         RAISE EXCEPTION 'Comment does not belong to user';
+--     END IF;
+--     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+    
+--     COMMIT;
+-- END;
+-- $$;
+
+-- -- Delete a comment on a Storyboard Story --
+-- CREATE OR REPLACE PROCEDURE story_comment_delete(storyboardId UUID, commentId UUID, userId UUID)
+-- LANGUAGE plpgsql AS $$
+-- BEGIN
+--     DELETE FROM story_comment WHERE id = commentId AND user_id = userId;
+--     IF NOT found THEN
+--         RAISE EXCEPTION 'Comment does not belong to user';
+--     END IF;
+--     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+    
+--     COMMIT;
+-- END;
+-- $$;
+
+-- -- Add a Persona to Storyboard --
+-- CREATE OR REPLACE PROCEDURE persona_add(storyboardId UUID, personaName VARCHAR(256), personaRole VARCHAR(256), personaDescription TEXT)
+-- LANGUAGE plpgsql AS $$
+-- BEGIN
+--     INSERT INTO story_comment (storyboard_id, story_id, user_id, comment) VALUES (storyboardId, storyId, userId, comment);
+--     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+    
+--     COMMIT;
+-- END;
+-- $$;
+
+-- -- Edit a Storyboard Persona --
+-- CREATE OR REPLACE PROCEDURE persona_edit(storyboardId UUID, personaId UUID, personaName VARCHAR(256), personaRole VARCHAR(256), personaDescription TEXT)
+-- LANGUAGE plpgsql AS $$
+-- BEGIN
+--     UPDATE storyboard_persona SET name = personaName, role = personaRole, description = personaDescription, updated_date = NOW() WHERE id = personaId;
+--     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+    
+--     COMMIT;
+-- END;
+-- $$;
+
+-- -- Delete a Storyboard Persona --
+-- CREATE OR REPLACE PROCEDURE persona_delete(storyboardId UUID, personaId UUID)
+-- LANGUAGE plpgsql AS $$
+-- BEGIN
+--     DELETE FROM storyboard_persona WHERE id = personaId;
+--     UPDATE storyboard SET updated_date = NOW() WHERE id = storyboardId;
+    
+--     COMMIT;
+-- END;
+-- $$;
 
 -- Reset User Password --
 CREATE OR REPLACE PROCEDURE reset_user_password(resetId UUID, userPassword TEXT)

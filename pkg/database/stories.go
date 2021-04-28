@@ -83,6 +83,46 @@ func (d *Database) ReviseStoryColor(StoryboardID string, userID string, StoryID 
 	return goals, nil
 }
 
+// ReviseStoryPoints updates the story points by ID
+func (d *Database) ReviseStoryPoints(StoryboardID string, userID string, StoryID string, Points int) ([]*StoryboardGoal, error) {
+	err := d.ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := d.db.Exec(
+		`call update_story_points($1, $2);`,
+		StoryID,
+		Points,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := d.GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
+// ReviseStoryClosed updates the story closed status by ID
+func (d *Database) ReviseStoryClosed(StoryboardID string, userID string, StoryID string, Closed bool) ([]*StoryboardGoal, error) {
+	err := d.ConfirmOwner(StoryboardID, userID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := d.db.Exec(
+		`call update_story_closed($1, $2);`,
+		StoryID,
+		Closed,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := d.GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
 // MoveStoryboardStory moves the story by ID to Goal/Column by ID
 func (d *Database) MoveStoryboardStory(StoryboardID string, userID string, StoryID string, GoalID string, ColumnID string, PlaceBefore string) ([]*StoryboardGoal, error) {
 	err := d.ConfirmOwner(StoryboardID, userID)
@@ -121,3 +161,53 @@ func (d *Database) DeleteStoryboardStory(StoryboardID string, userID string, Sto
 
 	return goals, nil
 }
+
+// // AddStoryComment adds a comment to a story
+// func (d *Database) AddStoryComment(StoryboardID string, UserID string, StoryID string, Comment string) ([]*StoryboardGoal, error) {
+// 	if _, err := d.db.Exec(
+// 		`call story_comment_add($1, $2, $3, $4);`,
+// 		StoryboardID,
+// 		StoryID,
+// 		UserID,
+// 		Comment,
+// 	); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	goals := d.GetStoryboardGoals(StoryboardID)
+
+// 	return goals, nil
+// }
+
+// // UpdateStoryComment updates a story comment
+// func (d *Database) UpdateStoryComment(StoryboardID string, UserID string, commentID string, Comment string) ([]*StoryboardGoal, error) {
+// 	if _, err := d.db.Exec(
+// 		`call story_comment_edit($1, $2, $3, $4);`,
+// 		StoryboardID,
+// 		commentID,
+// 		UserID,
+// 		Comment,
+// 	); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	goals := d.GetStoryboardGoals(StoryboardID)
+
+// 	return goals, nil
+// }
+
+// // DeleteStoryComment deletes a story comment
+// func (d *Database) DeleteStoryComment(StoryboardID string, UserID string, commentID string) ([]*StoryboardGoal, error) {
+// 	if _, err := d.db.Exec(
+// 		`call story_comment_delete($1, $2, $3, $4);`,
+// 		StoryboardID,
+// 		commentID,
+// 		UserID,
+// 	); err != nil {
+// 		log.Println(err)
+// 	}
+
+// 	goals := d.GetStoryboardGoals(StoryboardID)
+
+// 	return goals, nil
+// }

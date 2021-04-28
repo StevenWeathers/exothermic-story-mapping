@@ -7,28 +7,15 @@
     import PageLayout from '../components/PageLayout.svelte'
     import UserCard from '../components/UserCard.svelte'
     import InviteUser from '../components/InviteUser.svelte'
+    import ColumnForm from '../components/ColumnForm.svelte'
+    import StoryForm from '../components/StoryForm.svelte'
     import UsersIcon from '../components/icons/UsersIcon.svelte'
     import HollowButton from '../components/HollowButton.svelte'
     import TimesIcon from '../components/icons/TimesIcon.svelte'
-    import TrashIcon from '../components/icons/TrashIcon.svelte'
-    import DropperIcon from '../components/icons/DropperIcon.svelte'
+    import EditIcon from '../components/icons/EditIcon.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import { appRoutes, PathPrefix } from '../config'
     import { user } from '../stores.js'
-
-    const cardColors = [
-        'red',
-        'orange',
-        'yellow',
-        'green',
-        'teal',
-        'blue',
-        'indigo',
-        'purple',
-        'pink',
-    ]
-
-    const defaultColor = 'blue'
 
     // instantiate dragula, utilizing drop-column as class for the containers
     const drake = dragula({
@@ -53,7 +40,8 @@
         users: [],
     }
     let showUsers = false
-    let changeColor = ''
+    let editColumn = null
+    let activeStory = null
 
     // event handlers
     const addStory = (goalId, columnId) => () => {
@@ -85,9 +73,8 @@
     const deleteColumn = columnId => () => {
         sendSocketEvent('delete_column', columnId)
         eventTag('column_delete', 'storyboard', '')
+        toggleColumnEdit()()
     }
-
-    const showChangeColor = id => () => (changeColor = id)
 
     const changeStoryColor = (storyId, color) => () => {
         sendSocketEvent(
@@ -97,12 +84,11 @@
                 color,
             }),
         )
-        changeColor = ''
         eventTag('story_edit_color', 'storyboard', color)
     }
 
     const storyUpdateName = storyId => evt => {
-        const name = event.target.value
+        const name = evt.target.value
         sendSocketEvent(
             'update_story_name',
             JSON.stringify({
@@ -114,7 +100,7 @@
     }
 
     const storyUpdateContent = storyId => evt => {
-        const content = event.target.value
+        const content = evt.target.value
         sendSocketEvent(
             'update_story_content',
             JSON.stringify({
@@ -123,6 +109,31 @@
             }),
         )
         eventTag('story_edit_content', 'storyboard', '')
+    }
+
+    const storyUpdatePoints = storyId => evt => {
+        const points = parseInt(evt.target.value, 10)
+        console.log(points)
+        console.log(evt)
+        sendSocketEvent(
+            'update_story_points',
+            JSON.stringify({
+                storyId,
+                points,
+            }),
+        )
+        eventTag('story_edit_points', 'storyboard', '')
+    }
+
+    const storyUpdateClosed = storyId => closed => {
+        sendSocketEvent(
+            'update_story_closed',
+            JSON.stringify({
+                storyId,
+                closed,
+            }),
+        )
+        eventTag('story_edit_closed', 'storyboard', '')
     }
 
     drake.on('drop', function(el, target, source, sibling) {
@@ -289,6 +300,12 @@
         eventTag('show_users', 'storyboard', `show: ${showUsers}`)
     }
 
+    function toggleColumnEdit(column) {
+        return () => {
+            editColumn = editColumn != null ? null : column
+        }
+    }
+
     let showAddGoal = false
     let reviseGoalId = ''
     let reviseGoalName = ''
@@ -319,6 +336,15 @@
     const handleGoalDeletion = goalId => () => {
         sendSocketEvent('delete_goal', goalId)
         eventTag('goal_delete', 'storyboard', '')
+    }
+
+    const handleColumnRevision = column => {
+        sendSocketEvent('revise_column', JSON.stringify(column))
+        eventTag('column_revise', 'storyboard', '')
+    }
+
+    const toggleStoryForm = story => () => {
+        activeStory = activeStory != null ? null : story
     }
 
     onMount(() => {
@@ -356,42 +382,24 @@
         filter: alpha(opacity=20);
     }
 
-    .story-red {
-        @apply bg-red-100;
-        @apply border-red-200;
-    }
-    .story-orange {
-        @apply bg-orange-100;
-        @apply border-orange-200;
-    }
-    .story-yellow {
-        @apply bg-yellow-100;
-        @apply border-yellow-200;
-    }
-    .story-green {
-        @apply bg-green-100;
-        @apply border-green-200;
-    }
-    .story-teal {
-        @apply bg-teal-100;
-        @apply border-teal-200;
-    }
-    .story-blue {
-        @apply bg-blue-100;
-        @apply border-blue-200;
-    }
-    .story-indigo {
-        @apply bg-indigo-100;
-        @apply border-indigo-200;
-    }
-    .story-purple {
-        @apply bg-purple-100;
-        @apply border-purple-200;
-    }
-    .story-pink {
-        @apply bg-pink-100;
-        @apply border-pink-200;
-    }
+    .story-red { @apply border-red-400; }
+    .story-red:hover { @apply border-red-800; }
+    .story-orange { @apply border-orange-400; }
+    .story-orange:hover { @apply border-orange-800; }
+    .story-yellow { @apply border-yellow-400; }
+    .story-yellow:hover { @apply border-yellow-800; }
+    .story-green { @apply border-green-400; }
+    .story-green:hover { @apply border-green-800; }
+    .story-teal { @apply border-teal-400; }
+    .story-teal:hover { @apply border-teal-800; }
+    .story-blue { @apply border-blue-400; }
+    .story-blue:hover { @apply border-blue-800; }
+    .story-indigo { @apply border-indigo-400; }
+    .story-indigo:hover { @apply border-indigo-800; }
+    .story-purple { @apply border-purple-400; }
+    .story-purple:hover { @apply border-purple-800; }
+    .story-pink { @apply border-pink-400; }
+    .story-pink:hover { @apply border-pink-800; }
 </style>
 
 <svelte:head>
@@ -462,7 +470,7 @@
     {#each storyboard.goals as goal, goalIndex (goal.id)}
         <div data-goalid="{goal.id}">
             <div
-                class="flex px-6 py-2 border-b-2 border-gray-300 {goalIndex > 0 ? 'border-t-2' : ''}">
+                class="flex px-6 py-2 border-b-2 bg-gray-200 border-gray-300 {goalIndex > 0 ? 'border-t-2' : ''}">
                 <div class="w-3/4 relative">
                     <div class="inline-block align-middle font-bold">
                         <DownCarrotIcon additionalClasses="mr-1" />
@@ -496,78 +504,65 @@
             </div>
             <section
                 class="flex px-2"
-                style="overflow-x: scroll; min-height: 260px">
+                style="overflow-x: scroll">
                 {#each goal.columns as goalColumn (goalColumn.id)}
-                    <div class="flex-none my-4 mx-2" style="width: 260px">
-                        <div class="flex">
-                            <button
-                                on:click="{addStory(goal.id, goalColumn.id)}"
-                                class="flex-grow font-bold text-xl bg-gray-300
-                                py-1 px-2 mr-1">
-                                +
-                            </button>
-                            <button
-                                on:click="{deleteColumn(goalColumn.id)}"
-                                class="flex-none font-bold text-xl bg-gray-300
-                                py-1 px-2">
-                                <TrashIcon />
-                            </button>
+                    <div class="flex-none my-4 mx-2 w-40">
+                        <div class="flex-none">
+                            <div class="w-full mb-2">
+                                <div class="flex">
+                                    <span class="font-bold flex-grow truncate" title="{goalColumn.name}">{goalColumn.name}</span>
+                                    <button
+                                        on:click="{toggleColumnEdit(goalColumn)}"
+                                        class="flex-none font-bold text-xl
+                                        border-dashed border-2 border-gray-400 hover:border-green-500
+                                        text-gray-600 hover:text-green-500
+                                        py-1 px-2"
+                                        title="Edit Column"
+                                    >
+                                        <EditIcon />
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="w-full">
+                                <div class="flex">
+                                    <button
+                                        on:click="{addStory(goal.id, goalColumn.id)}"
+                                        class="flex-grow font-bold text-xl py-1 px-2
+                                        border-dashed border-2 border-gray-400 hover:border-green-500
+                                        text-gray-600 hover:text-green-500"
+                                        title="Add Story to Column"
+                                    >
+                                        +
+                                    </button>
+                                    
+                                </div>
+                            </div>
                         </div>
                         <ul
-                            class="drop-column list-reset w-full min-h-full"
+                            class="drop-column w-full"
+                            style="min-height: 160px;"
                             data-goalid="{goal.id}"
                             data-columnid="{goalColumn.id}">
                             {#each goalColumn.stories as story (story.id)}
                                 <li
-                                    class="max-w-xs shadow story-{story.color}
-                                    border my-4 list-reset"
+                                    class="max-w-xs h-24 shadow bg-white border-l-4 story-{story.color} border my-4"
+                                    style="list-style: none;"
                                     data-goalid="{goal.id}"
                                     data-columnid="{goalColumn.id}"
-                                    data-storyid="{story.id}">
-                                    <div class="p-2">
-                                        <div class="mb-2 relative flex">
-                                            <button
-                                                on:click="{deleteStory(story.id)}">
-                                                <TimesIcon
-                                                    color="{story.color}" />
-                                            </button>
-                                            <input
-                                                type="text"
-                                                value="{story.name}"
-                                                on:change="{storyUpdateName(story.id)}"
-                                                class="inline-block font-bold
-                                                text-l bg-transparent mx-2
-                                                w-full" />
-                                            <div
-                                                class="inline-block align-middle
-                                                text-right">
-                                                <button
-                                                    on:click="{showChangeColor(story.id)}">
-                                                    <DropperIcon
-                                                        color="{story.color}" />
-                                                </button>
-                                                {#if changeColor === story.id}
-                                                    <div
-                                                        class="shadow border
-                                                        bg-white absolute
-                                                        right-0 top-0">
-                                                        {#each cardColors as color}
-                                                            <button
-                                                                on:click="{changeStoryColor(story.id, color)}"
-                                                                class="p-4
-                                                                hover:bg-{color}-200
-                                                                bg-{color}-100"></button>
-                                                        {/each}
-                                                    </div>
-                                                {/if}
+                                    data-storyid="{story.id}"
+                                    on:click="{toggleStoryForm(story)}">
+                                    <div>
+                                        <div>
+                                            <div class="h-16 text-sm overflow-hidden {story.closed ? "line-through" : ""}" title="{story.name}">
+                                                <div class="p-1">{story.name}</div>
+                                            </div>
+                                            <div class="h-8">
+                                                <div class="flex p-1">
+                                                    <div class="w-1/2">{story.comments ? story.comments.length : ''}</div>
+                                                    <div class="w-1/2 text-right">{story.points > 0 ? story.points : ''}</div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <textarea
-                                            class="w-full h-full bg-transparent
-                                            resize-none"
-                                            rows="4"
-                                            on:change="{storyUpdateContent(story.id)}"
-                                            value="{story.content}"></textarea>
                                     </div>
                                 </li>
                             {/each}
@@ -607,4 +602,26 @@
         {handleGoalRevision}
         goalId="{reviseGoalId}"
         goalName="{reviseGoalName}" />
+{/if}
+
+{#if editColumn}
+    <ColumnForm
+        {handleColumnRevision}
+        toggleColumnEdit="{toggleColumnEdit()}"
+        column="{editColumn}"
+        {deleteColumn}
+    />
+{/if}
+
+{#if activeStory}
+    <StoryForm
+        toggleStoryForm="{toggleStoryForm()}"
+        story={activeStory}
+        changeColor={changeStoryColor}
+        updateContent={storyUpdateContent}
+        {deleteStory}
+        updateName={storyUpdateName}
+        updatePoints={storyUpdatePoints}
+        updateClosed={storyUpdateClosed}
+    />
 {/if}

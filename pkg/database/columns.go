@@ -23,6 +23,27 @@ func (d *Database) CreateStoryboardColumn(StoryboardID string, GoalID string, us
 	return goals, nil
 }
 
+// ReviseStoryboardColumn revises a storyboard column
+func (d *Database) ReviseStoryboardColumn(StoryboardID string, UserID string, ColumnID string, ColumnName string) ([]*StoryboardGoal, error) {
+	err := d.ConfirmOwner(StoryboardID, UserID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := d.db.Exec(
+		`call revise_storyboard_column($1, $2, $3);`,
+		StoryboardID,
+		ColumnID,
+		ColumnName,
+	); err != nil {
+		log.Println(err)
+	}
+
+	goals := d.GetStoryboardGoals(StoryboardID)
+
+	return goals, nil
+}
+
 // DeleteStoryboardColumn removes a column from the current board by ID
 func (d *Database) DeleteStoryboardColumn(StoryboardID string, userID string, ColumnID string) ([]*StoryboardGoal, error) {
 	err := d.ConfirmOwner(StoryboardID, userID)
