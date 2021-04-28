@@ -9,9 +9,9 @@
     import InviteUser from '../components/InviteUser.svelte'
     import ColumnForm from '../components/ColumnForm.svelte'
     import StoryForm from '../components/StoryForm.svelte'
+    import ColorLegendForm from '../components/ColorLegendForm.svelte'
     import UsersIcon from '../components/icons/UsersIcon.svelte'
     import HollowButton from '../components/HollowButton.svelte'
-    import TimesIcon from '../components/icons/TimesIcon.svelte'
     import EditIcon from '../components/icons/EditIcon.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import { appRoutes, PathPrefix } from '../config'
@@ -38,8 +38,11 @@
         ownerId: '',
         goals: [],
         users: [],
+        colorLegend: []
     }
     let showUsers = false
+    let showColorLegend = false
+    let showColorLegendForm = false
     let editColumn = null
     let activeStory = null
 
@@ -300,10 +303,20 @@
         eventTag('show_users', 'storyboard', `show: ${showUsers}`)
     }
 
+    function toggleColorLegend() {
+        showColorLegend = !showColorLegend
+        eventTag('show_colorlegend', 'storyboard', `show: ${showColorLegend}`)
+    }
+
     function toggleColumnEdit(column) {
         return () => {
             editColumn = editColumn != null ? null : column
         }
+    }
+
+    function toggleEditLegend() {
+        showColorLegendForm = !showColorLegendForm
+        eventTag('show_edit_legend', 'storyboard', `show: ${showColorLegendForm}`)
     }
 
     let showAddGoal = false
@@ -341,6 +354,11 @@
     const handleColumnRevision = column => {
         sendSocketEvent('revise_column', JSON.stringify(column))
         eventTag('column_revise', 'storyboard', '')
+    }
+
+    const handleLegendRevision = legend => {
+        sendSocketEvent('revise_color_legend', JSON.stringify(legend))
+        eventTag('color_legend_revise', 'storyboard', '')
     }
 
     const toggleStoryForm = story => () => {
@@ -382,6 +400,8 @@
         filter: alpha(opacity=20);
     }
 
+    .story-gray { @apply border-gray-400; }
+    .story-gray:hover { @apply border-gray-800; }
     .story-red { @apply border-red-400; }
     .story-red:hover { @apply border-red-800; }
     .story-orange { @apply border-orange-400; }
@@ -400,6 +420,17 @@
     .story-purple:hover { @apply border-purple-800; }
     .story-pink { @apply border-pink-400; }
     .story-pink:hover { @apply border-pink-800; }
+
+    .colorcard-gray { @apply bg-gray-400; }
+    .colorcard-red { @apply bg-red-400; }
+    .colorcard-orange { @apply bg-orange-400; }
+    .colorcard-yellow { @apply bg-yellow-400; }
+    .colorcard-green { @apply bg-green-400; }
+    .colorcard-teal { @apply bg-teal-400; }
+    .colorcard-blue { @apply bg-blue-400; }
+    .colorcard-indigo { @apply bg-indigo-400; }
+    .colorcard-purple { @apply bg-purple-400; }
+    .colorcard-pink { @apply bg-pink-400; }
 </style>
 
 <svelte:head>
@@ -415,7 +446,7 @@
             <div>
                 {#if storyboard.ownerId === $user.id}
                     <HollowButton
-                        color="orange"
+                        color="green"
                         onClick="{toggleAddGoal()}"
                         additionalClasses="mr-2">
                         Add Goal
@@ -431,6 +462,13 @@
                         Leave Storyboard
                     </HollowButton>
                 {/if}
+                <HollowButton
+                    color="teal"
+                    additionalClasses="transition ease-in-out duration-150"
+                    onClick="{toggleColorLegend}">
+                    Color Legend
+                    <DownCarrotIcon additionalClasses="ml-1" />
+                </HollowButton>
                 <HollowButton
                     color="gray"
                     additionalClasses="transition ease-in-out duration-150"
@@ -462,6 +500,32 @@
                                 {hostname}
                                 storyboardId="{storyboard.id}" />
                         </div>
+                    </div>
+                </div>
+            {/if}
+            {#if showColorLegend}
+                <div
+                    class="origin-top-right absolute right-0 mt-1 w-64
+                    rounded-md shadow-lg text-left">
+                    <div class="rounded-md bg-white shadow-xs">
+                        <ul class="p-2">
+                            {#each storyboard.colorLegend as color}
+                                <li class="mb-1 flex w-full">
+                                    <span class="p-4 mr-2 inline-block colorcard-{color.color}"></span>
+                                    <span class="inline-block align-middle {color.legend === '' ? 'text-gray-300' : 'text-gray-600'}">{color.legend || 'legend not specified'}</span>
+                                </li>
+                            {/each}
+                        </ul>
+
+                        {#if storyboard.ownerId === $user.id}
+                            <div class="p-2">
+                                <HollowButton
+                                    color="orange"
+                                    onClick="{toggleEditLegend}">
+                                    Edit Legend
+                                </HollowButton>
+                            </div>
+                        {/if}
                     </div>
                 </div>
             {/if}
@@ -623,5 +687,13 @@
         updateName={storyUpdateName}
         updatePoints={storyUpdatePoints}
         updateClosed={storyUpdateClosed}
+        colorLegend={storyboard.colorLegend}
     />
+{/if}
+
+{#if showColorLegendForm}
+    <ColorLegendForm
+        {handleLegendRevision}
+        {toggleEditLegend}
+        colorLegend={storyboard.colorLegend} />
 {/if}

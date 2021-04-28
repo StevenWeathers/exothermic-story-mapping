@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 )
@@ -29,26 +30,34 @@ func (d *Database) CreateStoryboard(OwnerID string, StoryboardName string) (*Sto
 
 // GetStoryboard gets a storyboard by ID
 func (d *Database) GetStoryboard(StoryboardID string) (*Storyboard, error) {
+	var cl string
 	var b = &Storyboard{
 		StoryboardID:   StoryboardID,
 		OwnerID:        "",
 		StoryboardName: "",
 		Users:          make([]*StoryboardUser, 0),
 		Goals:          make([]*StoryboardGoal, 0),
+		ColorLegend:    make([]*Color, 0),
 	}
 
 	// get storyboard
 	e := d.db.QueryRow(
-		"SELECT id, name, owner_id FROM storyboard WHERE id = $1",
+		"SELECT id, name, owner_id, color_legend FROM storyboard WHERE id = $1",
 		StoryboardID,
 	).Scan(
 		&b.StoryboardID,
 		&b.StoryboardName,
 		&b.OwnerID,
+		&cl,
 	)
 	if e != nil {
 		log.Println(e)
 		return nil, errors.New("Not found")
+	}
+
+	clErr := json.Unmarshal([]byte(cl), &b.ColorLegend)
+	if clErr != nil {
+		log.Println(clErr)
 	}
 
 	b.Users = d.GetStoryboardUsers(StoryboardID)
@@ -216,6 +225,30 @@ func (d *Database) SetStoryboardOwner(StoryboardID string, userID string, OwnerI
 	if _, err := d.db.Exec(
 		`call set_storyboard_owner($1, $2);`, StoryboardID, OwnerID); err != nil {
 		log.Println(err)
+	}
+
+	storyboard, err := d.GetStoryboard(StoryboardID)
+	if err != nil {
+		return nil, errors.New("Unable to promote owner")
+	}
+
+	return storyboard, nil
+}
+
+// ReviseColorLegend revises the storyboard color legend by StoryboardID
+func (d *Database) ReviseColorLegend(StoryboardID string, UserID string, ColorLegend string) (*Storyboard, error) {
+	err := d.ConfirmOwner(StoryboardID, UserID)
+	if err != nil {
+		return nil, errors.New("Incorrect permissions")
+	}
+
+	if _, err := d.db.Exec(
+		`call revise_color_legend($1, $2);`,
+		StoryboardID,
+		ColorLegend,
+	); err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
 	storyboard, err := d.GetStoryboard(StoryboardID)

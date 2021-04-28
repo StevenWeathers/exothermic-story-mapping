@@ -21,6 +21,12 @@ type Database struct {
 	db     *sql.DB
 }
 
+// Color is a color legend
+type Color struct {
+	Color  string `json:"color"`
+	Legend string `json:"legend"`
+}
+
 // StoryboardUser aka user
 type StoryboardUser struct {
 	UserID   string `json:"id"`
@@ -35,6 +41,7 @@ type Storyboard struct {
 	StoryboardName string            `json:"name"`
 	Users          []*StoryboardUser `json:"users"`
 	Goals          []*StoryboardGoal `json:"goals"`
+	ColorLegend    []*Color          `json:"colorLegend"`
 }
 
 // StoryboardGoal A row in a story mapping board

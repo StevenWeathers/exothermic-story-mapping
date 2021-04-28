@@ -365,6 +365,15 @@ func (s subscription) readPump(srv *server) {
 
 			updatedStoryboard, _ := json.Marshal(storyboard)
 			msg = CreateSocketEvent("storyboard_updated", string(updatedStoryboard), "")
+		case "revise_color_legend":
+			storyboard, err := srv.database.ReviseColorLegend(storyboardID, userID, keyVal["value"])
+			if err != nil {
+				badEvent = true
+				break
+			}
+
+			updatedStoryboard, _ := json.Marshal(storyboard)
+			msg = CreateSocketEvent("storyboard_updated", string(updatedStoryboard), "")
 		case "concede_storyboard":
 			err := srv.database.DeleteStoryboard(storyboardID, userID)
 			if err != nil {

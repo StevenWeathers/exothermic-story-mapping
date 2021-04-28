@@ -123,6 +123,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar VARCHAR(128) DEFAULT 'identico
 ALTER TABLE storyboard_user ADD COLUMN IF NOT EXISTS abandoned BOOL DEFAULT false;
 ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS points INTEGER;
 ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS closed BOOL DEFAULT false;
+ALTER TABLE storyboard_story ALTER COLUMN color SET DEFAULT 'gray';
+ALTER TABLE storyboard ADD COLUMN IF NOT EXISTS color_legend JSONB DEFAULT '[{"color":"gray","legend":""},{"color":"red","legend":""},{"color":"orange","legend":""},{"color":"yellow","legend":""},{"color":"green","legend":""},{"color":"teal","legend":""},{"color":"blue","legend":""},{"color":"indigo","legend":""},{"color":"purple","legend":""},{"color":"pink","legend":""}]'::JSONB;
 
 DO $$
 BEGIN
@@ -232,6 +234,14 @@ CREATE OR REPLACE PROCEDURE set_storyboard_owner(storyboardId UUID, ownerId UUID
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE storyboard SET updated_date = NOW(), owner_id = ownerId WHERE id = storyboardId;
+END;
+$$;
+
+-- Revise Storyboard ColorLegend --
+CREATE OR REPLACE PROCEDURE revise_color_legend(storyboardId UUID, colorLegend JSONB)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE storyboard SET updated_date = NOW(), color_legend = colorLegend WHERE id = storyboardId;
 END;
 $$;
 

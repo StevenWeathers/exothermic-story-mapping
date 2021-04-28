@@ -12,18 +12,7 @@ import HollowButton from './HollowButton.svelte'
     export let deleteStory = () => () => {}
 
     export let story = {}
-
-    const cardColors = [
-        'red',
-        'orange',
-        'yellow',
-        'green',
-        'teal',
-        'blue',
-        'indigo',
-        'purple',
-        'pink',
-    ]
+    export let colorLegend = []
 
     function handleStoryDelete() {
         deleteStory(story.id)()
@@ -41,24 +30,26 @@ import HollowButton from './HollowButton.svelte'
 </script>
 
 <style>
-    .story-red { @apply bg-red-400; }
-    .story-red:hover { @apply bg-red-800; }
-    .story-orange { @apply bg-orange-400; }
-    .story-orange:hover { @apply bg-orange-800; }
-    .story-yellow { @apply bg-yellow-400; }
-    .story-yellow:hover { @apply bg-yellow-800; }
-    .story-green { @apply bg-green-400; }
-    .story-green:hover { @apply bg-green-800; }
-    .story-teal { @apply bg-teal-400; }
-    .story-teal:hover { @apply bg-teal-800; }
-    .story-blue { @apply bg-blue-400; }
-    .story-blue:hover { @apply bg-blue-800; }
-    .story-indigo { @apply bg-indigo-400; }
-    .story-indigo:hover { @apply bg-indigo-800; }
-    .story-purple { @apply bg-purple-400; }
-    .story-purple:hover { @apply bg-purple-800; }
-    .story-pink { @apply bg-pink-400; }
-    .story-pink:hover { @apply bg-pink-800; }
+    .colorcard-gray { @apply bg-gray-400; }
+    .colorcard-gray:hover { @apply bg-gray-800; }
+    .colorcard-red { @apply bg-red-400; }
+    .colorcard-red:hover { @apply bg-red-800; }
+    .colorcard-orange { @apply bg-orange-400; }
+    .colorcard-orange:hover { @apply bg-orange-800; }
+    .colorcard-yellow { @apply bg-yellow-400; }
+    .colorcard-yellow:hover { @apply bg-yellow-800; }
+    .colorcard-green { @apply bg-green-400; }
+    .colorcard-green:hover { @apply bg-green-800; }
+    .colorcard-teal { @apply bg-teal-400; }
+    .colorcard-teal:hover { @apply bg-teal-800; }
+    .colorcard-blue { @apply bg-blue-400; }
+    .colorcard-blue:hover { @apply bg-blue-800; }
+    .colorcard-indigo { @apply bg-indigo-400; }
+    .colorcard-indigo:hover { @apply bg-indigo-800; }
+    .colorcard-purple { @apply bg-purple-400; }
+    .colorcard-purple:hover { @apply bg-purple-800; }
+    .colorcard-pink { @apply bg-pink-400; }
+    .colorcard-pink:hover { @apply bg-pink-800; }
 </style>
 
 <div class="fixed inset-0 flex items-center z-40">
@@ -144,13 +135,14 @@ import HollowButton from './HollowButton.svelte'
                         <div class="mb-2">
                             <div class="font-bold">Storycard Color</div>
                             <div>
-                                {#each cardColors as color}
+                                {#each colorLegend as color}
                                     <button
-                                        on:click="{changeColor(story.id, color)}"
+                                        on:click="{changeColor(story.id, color.color)}"
                                         class="p-4 mr-2 mb-2
-                                        story-{color}
+                                        colorcard-{color.color}
                                         border-2 border-solid
-                                        {story.color === color ? `border-${color}-800` : "border-transparent"}"></button>
+                                        {story.color === color.color ? `border-${color.color}-800` : "border-transparent"}"
+                                        title="{color.color}{color.legend !== "" ? ` - ${color.legend}` : ''}"></button>
                                 {/each}
                             </div>
                         </div>
