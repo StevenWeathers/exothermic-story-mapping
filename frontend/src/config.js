@@ -16,6 +16,9 @@ const appRoutes = {
     admin: `${PathPrefix}/admin`,
     storyboards: `${PathPrefix}/storyboards`,
     storyboard: `${PathPrefix}/storyboard`,
+    organizations: `${PathPrefix}/organizations`,
+    organization: `${PathPrefix}/organization`,
+    team: `${PathPrefix}/team`,
 }
 
 export { locales, fallbackLocale, appRoutes, PathPrefix }

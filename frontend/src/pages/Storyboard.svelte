@@ -41,7 +41,7 @@
         goals: [],
         users: [],
         colorLegend: [],
-        personas: []
+        personas: [],
     }
     let showUsers = false
     let showColorLegend = false
@@ -355,13 +355,21 @@
     function toggleEditLegend() {
         showColorLegend = false
         showColorLegendForm = !showColorLegendForm
-        eventTag('show_edit_legend', 'storyboard', `show: ${showColorLegendForm}`)
+        eventTag(
+            'show_edit_legend',
+            'storyboard',
+            `show: ${showColorLegendForm}`,
+        )
     }
 
-    const toggleEditPersona  = persona => () => {
+    const toggleEditPersona = persona => () => {
         showPersonas = false
         showPersonasForm = showPersonasForm != null ? null : persona
-        eventTag('show_edit_personas', 'storyboard', `show: ${showPersonasForm}`)
+        eventTag(
+            'show_edit_personas',
+            'storyboard',
+            `show: ${showPersonasForm}`,
+        )
     }
 
     let showAddGoal = false
@@ -407,7 +415,10 @@
     }
 
     const addStoryComment = (storyId, comment) => {
-        sendSocketEvent('add_story_comment', JSON.stringify({ storyId, comment }))
+        sendSocketEvent(
+            'add_story_comment',
+            JSON.stringify({ storyId, comment }),
+        )
         eventTag('story_add_comment', 'storyboard', '')
     }
 
@@ -465,37 +476,97 @@
         filter: alpha(opacity=20);
     }
 
-    .story-gray { @apply border-gray-400; }
-    .story-gray:hover { @apply border-gray-800; }
-    .story-red { @apply border-red-400; }
-    .story-red:hover { @apply border-red-800; }
-    .story-orange { @apply border-orange-400; }
-    .story-orange:hover { @apply border-orange-800; }
-    .story-yellow { @apply border-yellow-400; }
-    .story-yellow:hover { @apply border-yellow-800; }
-    .story-green { @apply border-green-400; }
-    .story-green:hover { @apply border-green-800; }
-    .story-teal { @apply border-teal-400; }
-    .story-teal:hover { @apply border-teal-800; }
-    .story-blue { @apply border-blue-400; }
-    .story-blue:hover { @apply border-blue-800; }
-    .story-indigo { @apply border-indigo-400; }
-    .story-indigo:hover { @apply border-indigo-800; }
-    .story-purple { @apply border-purple-400; }
-    .story-purple:hover { @apply border-purple-800; }
-    .story-pink { @apply border-pink-400; }
-    .story-pink:hover { @apply border-pink-800; }
+    .story-gray {
+        @apply border-gray-400;
+    }
+    .story-gray:hover {
+        @apply border-gray-800;
+    }
+    .story-red {
+        @apply border-red-400;
+    }
+    .story-red:hover {
+        @apply border-red-800;
+    }
+    .story-orange {
+        @apply border-orange-400;
+    }
+    .story-orange:hover {
+        @apply border-orange-800;
+    }
+    .story-yellow {
+        @apply border-yellow-400;
+    }
+    .story-yellow:hover {
+        @apply border-yellow-800;
+    }
+    .story-green {
+        @apply border-green-400;
+    }
+    .story-green:hover {
+        @apply border-green-800;
+    }
+    .story-teal {
+        @apply border-teal-400;
+    }
+    .story-teal:hover {
+        @apply border-teal-800;
+    }
+    .story-blue {
+        @apply border-blue-400;
+    }
+    .story-blue:hover {
+        @apply border-blue-800;
+    }
+    .story-indigo {
+        @apply border-indigo-400;
+    }
+    .story-indigo:hover {
+        @apply border-indigo-800;
+    }
+    .story-purple {
+        @apply border-purple-400;
+    }
+    .story-purple:hover {
+        @apply border-purple-800;
+    }
+    .story-pink {
+        @apply border-pink-400;
+    }
+    .story-pink:hover {
+        @apply border-pink-800;
+    }
 
-    .colorcard-gray { @apply bg-gray-400; }
-    .colorcard-red { @apply bg-red-400; }
-    .colorcard-orange { @apply bg-orange-400; }
-    .colorcard-yellow { @apply bg-yellow-400; }
-    .colorcard-green { @apply bg-green-400; }
-    .colorcard-teal { @apply bg-teal-400; }
-    .colorcard-blue { @apply bg-blue-400; }
-    .colorcard-indigo { @apply bg-indigo-400; }
-    .colorcard-purple { @apply bg-purple-400; }
-    .colorcard-pink { @apply bg-pink-400; }
+    .colorcard-gray {
+        @apply bg-gray-400;
+    }
+    .colorcard-red {
+        @apply bg-red-400;
+    }
+    .colorcard-orange {
+        @apply bg-orange-400;
+    }
+    .colorcard-yellow {
+        @apply bg-yellow-400;
+    }
+    .colorcard-green {
+        @apply bg-green-400;
+    }
+    .colorcard-teal {
+        @apply bg-teal-400;
+    }
+    .colorcard-blue {
+        @apply bg-blue-400;
+    }
+    .colorcard-indigo {
+        @apply bg-indigo-400;
+    }
+    .colorcard-purple {
+        @apply bg-purple-400;
+    }
+    .colorcard-pink {
+        @apply bg-pink-400;
+    }
 </style>
 
 <svelte:head>
@@ -544,21 +615,29 @@
                                     {#each storyboard.personas as persona}
                                         <li class="mb-1 w-full">
                                             <div>
-                                                <span class="font-bold">{persona.name}</span>
+                                                <span class="font-bold">
+                                                    {persona.name}
+                                                </span>
                                                 {#if storyboard.owner_id === $user.id}
                                                     &nbsp;|&nbsp;
                                                     <button
                                                         on:click="{toggleEditPersona(persona)}"
-                                                        class="text-orange-500 hover:text-orange-800"
-                                                    >Edit</button>
+                                                        class="text-orange-500
+                                                        hover:text-orange-800">
+                                                        Edit
+                                                    </button>
                                                     &nbsp;|&nbsp;
                                                     <button
                                                         on:click="{handleDeletePersona(persona.id)}"
-                                                        class="text-red-500 hover:text-red-800"
-                                                    >Delete</button>
+                                                        class="text-red-500
+                                                        hover:text-red-800">
+                                                        Delete
+                                                    </button>
                                                 {/if}
                                             </div>
-                                            <span class="text-sm">{persona.role}</span>
+                                            <span class="text-sm">
+                                                {persona.role}
+                                            </span>
                                         </li>
                                     {/each}
                                 </ul>
@@ -567,7 +646,12 @@
                                     <div class="p-2 text-right">
                                         <HollowButton
                                             color="green"
-                                            onClick="{toggleEditPersona({ id: '', name: '', role: '', description: '' })}">
+                                            onClick="{toggleEditPersona({
+                                                id: '',
+                                                name: '',
+                                                role: '',
+                                                description: '',
+                                            })}">
                                             Add Persona
                                         </HollowButton>
                                     </div>
@@ -592,8 +676,14 @@
                                 <ul class="p-2">
                                     {#each storyboard.color_legend as color}
                                         <li class="mb-1 flex w-full">
-                                            <span class="p-4 mr-2 inline-block colorcard-{color.color}"></span>
-                                            <span class="inline-block align-middle {color.legend === '' ? 'text-gray-300' : 'text-gray-600'}">{color.legend || 'legend not specified'}</span>
+                                            <span
+                                                class="p-4 mr-2 inline-block
+                                                colorcard-{color.color}"></span>
+                                            <span
+                                                class="inline-block align-middle
+                                                {color.legend === '' ? 'text-gray-300' : 'text-gray-600'}">
+                                                {color.legend || 'legend not specified'}
+                                            </span>
                                         </li>
                                     {/each}
                                 </ul>
@@ -684,23 +774,24 @@
                     {/if}
                 </div>
             </div>
-            <section
-                class="flex px-2"
-                style="overflow-x: scroll">
+            <section class="flex px-2" style="overflow-x: scroll">
                 {#each goal.columns as goalColumn (goalColumn.id)}
                     <div class="flex-none my-4 mx-2 w-40">
                         <div class="flex-none">
                             <div class="w-full mb-2">
                                 <div class="flex">
-                                    <span class="font-bold flex-grow truncate" title="{goalColumn.name}">{goalColumn.name}</span>
+                                    <span
+                                        class="font-bold flex-grow truncate"
+                                        title="{goalColumn.name}">
+                                        {goalColumn.name}
+                                    </span>
                                     <button
                                         on:click="{toggleColumnEdit(goalColumn)}"
                                         class="flex-none font-bold text-xl
-                                        border-dashed border-2 border-gray-400 hover:border-green-500
-                                        text-gray-600 hover:text-green-500
-                                        py-1 px-2"
-                                        title="Edit Column"
-                                    >
+                                        border-dashed border-2 border-gray-400
+                                        hover:border-green-500 text-gray-600
+                                        hover:text-green-500 py-1 px-2"
+                                        title="Edit Column">
                                         <EditIcon />
                                     </button>
                                 </div>
@@ -709,14 +800,14 @@
                                 <div class="flex">
                                     <button
                                         on:click="{addStory(goal.id, goalColumn.id)}"
-                                        class="flex-grow font-bold text-xl py-1 px-2
-                                        border-dashed border-2 border-gray-400 hover:border-green-500
+                                        class="flex-grow font-bold text-xl py-1
+                                        px-2 border-dashed border-2
+                                        border-gray-400 hover:border-green-500
                                         text-gray-600 hover:text-green-500"
-                                        title="Add Story to Column"
-                                    >
+                                        title="Add Story to Column">
                                         +
                                     </button>
-                                    
+
                                 </div>
                             </div>
                         </div>
@@ -727,7 +818,9 @@
                             data-columnid="{goalColumn.id}">
                             {#each goalColumn.stories as story (story.id)}
                                 <li
-                                    class="max-w-xs shadow bg-white border-l-4 story-{story.color} border my-4 cursor-pointer"
+                                    class="max-w-xs shadow bg-white border-l-4
+                                    story-{story.color} border my-4
+                                    cursor-pointer"
                                     style="list-style: none;"
                                     data-goalid="{goal.id}"
                                     data-columnid="{goalColumn.id}"
@@ -735,19 +828,38 @@
                                     on:click="{toggleStoryForm(story)}">
                                     <div>
                                         <div>
-                                            <div class="h-20 p-1 text-sm overflow-hidden {story.closed ? "line-through" : ""}" title="{story.name}">
+                                            <div
+                                                class="h-20 p-1 text-sm
+                                                overflow-hidden {story.closed ? 'line-through' : ''}"
+                                                title="{story.name}">
                                                 {story.name}
                                             </div>
                                             <div class="h-8">
-                                                <div class="flex content-center p-1 text-sm">
-                                                    <div class="w-1/2 text-gray-600">
+                                                <div
+                                                    class="flex content-center
+                                                    p-1 text-sm">
+                                                    <div
+                                                        class="w-1/2
+                                                        text-gray-600">
                                                         {#if story.comments.length > 0}
-                                                        <span class="inline-block align-middle">{story.comments.length} <CommentIcon /></span>
+                                                            <span
+                                                                class="inline-block
+                                                                align-middle">
+                                                                {story.comments.length}
+                                                                <CommentIcon />
+                                                            </span>
                                                         {/if}
                                                     </div>
-                                                    <div class="w-1/2 text-right">
+                                                    <div
+                                                        class="w-1/2 text-right">
                                                         {#if story.points > 0}
-                                                            <span class="px-2 bg-gray-300 inline-block align-middle">{story.points}</span>
+                                                            <span
+                                                                class="px-2
+                                                                bg-gray-300
+                                                                inline-block
+                                                                align-middle">
+                                                                {story.points}
+                                                            </span>
                                                         {/if}
                                                     </div>
                                                 </div>
@@ -799,37 +911,35 @@
         {handleColumnRevision}
         toggleColumnEdit="{toggleColumnEdit()}"
         column="{editColumn}"
-        {deleteColumn}
-    />
+        {deleteColumn} />
 {/if}
 
 {#if activeStory}
     <StoryForm
         toggleStoryForm="{toggleStoryForm()}"
-        story={activeStory}
-        changeColor={changeStoryColor}
-        updateContent={storyUpdateContent}
+        story="{activeStory}"
+        changeColor="{changeStoryColor}"
+        updateContent="{storyUpdateContent}"
         {deleteStory}
-        updateName={storyUpdateName}
-        updatePoints={storyUpdatePoints}
-        updateClosed={storyUpdateClosed}
-        colorLegend={storyboard.color_legend}
-        addComment={addStoryComment}
-        users={storyboard.users}
-    />
+        updateName="{storyUpdateName}"
+        updatePoints="{storyUpdatePoints}"
+        updateClosed="{storyUpdateClosed}"
+        colorLegend="{storyboard.color_legend}"
+        addComment="{addStoryComment}"
+        users="{storyboard.users}" />
 {/if}
 
 {#if showColorLegendForm}
     <ColorLegendForm
         {handleLegendRevision}
         {toggleEditLegend}
-        colorLegend={storyboard.color_legend} />
+        colorLegend="{storyboard.color_legend}" />
 {/if}
 
 {#if showPersonasForm}
     <PersonasForm
-        toggleEditPersona={toggleEditPersona()}
-        persona={showPersonasForm}
+        toggleEditPersona="{toggleEditPersona()}"
+        persona="{showPersonasForm}"
         {handlePersonaAdd}
         {handlePersonaRevision} />
 {/if}

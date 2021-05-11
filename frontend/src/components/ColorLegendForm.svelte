@@ -16,16 +16,36 @@
 </script>
 
 <style>
-    .colorcard-gray { @apply bg-gray-400; }
-    .colorcard-red { @apply bg-red-400; }
-    .colorcard-orange { @apply bg-orange-400; }
-    .colorcard-yellow { @apply bg-yellow-400; }
-    .colorcard-green { @apply bg-green-400; }
-    .colorcard-teal { @apply bg-teal-400; }
-    .colorcard-blue { @apply bg-blue-400; }
-    .colorcard-indigo { @apply bg-indigo-400; }
-    .colorcard-purple { @apply bg-purple-400; }
-    .colorcard-pink { @apply bg-pink-400; }
+    .colorcard-gray {
+        @apply bg-gray-400;
+    }
+    .colorcard-red {
+        @apply bg-red-400;
+    }
+    .colorcard-orange {
+        @apply bg-orange-400;
+    }
+    .colorcard-yellow {
+        @apply bg-yellow-400;
+    }
+    .colorcard-green {
+        @apply bg-green-400;
+    }
+    .colorcard-teal {
+        @apply bg-teal-400;
+    }
+    .colorcard-blue {
+        @apply bg-blue-400;
+    }
+    .colorcard-indigo {
+        @apply bg-indigo-400;
+    }
+    .colorcard-purple {
+        @apply bg-purple-400;
+    }
+    .colorcard-pink {
+        @apply bg-pink-400;
+    }
 </style>
 
 <div class="fixed inset-0 flex items-center z-40">
@@ -48,17 +68,17 @@
                 <div class="mb-4">
                     {#each colorLegend as color, i}
                         <div class="mb-1 flex">
-                            <span class="p-4 inline-block colorcard-{color.color}"></span>
+                            <span
+                                class="p-4 inline-block colorcard-{color.color}"></span>
                             <input
                                 class="bg-gray-200 border-gray-200 border-2
-                                appearance-none rounded flex-grow ml-2 py-2 px-3 text-gray-700
-                                leading-tight focus:outline-none focus:bg-white
-                                focus:border-purple-500"
+                                appearance-none rounded flex-grow ml-2 py-2 px-3
+                                text-gray-700 leading-tight focus:outline-none
+                                focus:bg-white focus:border-purple-500"
                                 type="text"
-                                bind:value={colorLegend[i].legend}
+                                bind:value="{colorLegend[i].legend}"
                                 placeholder="Enter a color legend"
-                                name="legend-{color.color}"
-                                />
+                                name="legend-{color.color}" />
                         </div>
                     {/each}
                 </div>

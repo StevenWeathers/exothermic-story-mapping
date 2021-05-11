@@ -10,7 +10,7 @@
         id: '',
         name: '',
         role: '',
-        description: ''
+        description: '',
     }
 
     function handleSubmit(event) {
@@ -20,7 +20,7 @@
             handlePersonaAdd({
                 name: persona.name,
                 role: persona.role,
-                description: persona.description
+                description: persona.description,
             })
         } else {
             handlePersonaRevision(persona)
@@ -47,7 +47,9 @@
 
             <form on:submit="{handleSubmit}" name="addPersona">
                 <div class="mb-4">
-                    <label class="block text-sm font-bold mb-2" for="personaName">
+                    <label
+                        class="block text-sm font-bold mb-2"
+                        for="personaName">
                         Persona Name
                     </label>
                     <input
@@ -62,7 +64,9 @@
                         name="personaName" />
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-bold mb-2" for="personaRole">
+                    <label
+                        class="block text-sm font-bold mb-2"
+                        for="personaRole">
                         Persona Role
                     </label>
                     <input
@@ -73,11 +77,14 @@
                         id="personaRole"
                         type="text"
                         bind:value="{persona.role}"
-                        placeholder="Enter a persona role e.g. Author, Developer, Admin"
+                        placeholder="Enter a persona role e.g. Author,
+                        Developer, Admin"
                         name="personaRole" />
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-bold mb-2" for="personaDescription">
+                    <label
+                        class="block text-sm font-bold mb-2"
+                        for="personaDescription">
                         Persona Description
                     </label>
                     <textarea
@@ -88,7 +95,7 @@
                         id="personaDescription"
                         bind:value="{persona.description}"
                         placeholder="Enter a persona description"
-                        name="personaDescription" />
+                        name="personaDescription"></textarea>
                 </div>
                 <div class="text-right">
                     <div>

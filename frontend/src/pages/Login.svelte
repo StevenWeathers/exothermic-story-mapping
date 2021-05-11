@@ -103,9 +103,17 @@
                         Login
                     </div>
                     {#if storyboardId && AllowRegistration}
-                        <div class="font-bold text-m md:text-l mb-2 md:mb-6
-                        md:leading-tight text-center">
-                            or <a href="${appRoutes.register}/${storyboardId}" class="font-bold text-blue-500 hover:text-blue-800">Regiser</a> to join the Storyboard
+                        <div
+                            class="font-bold text-m md:text-l mb-2 md:mb-6
+                            md:leading-tight text-center">
+                            or
+                            <a
+                                href="${appRoutes.register}/${storyboardId}"
+                                class="font-bold text-blue-500
+                                hover:text-blue-800">
+                                Regiser
+                            </a>
+                            to join the Storyboard
                         </div>
                     {/if}
                     <div class="mb-4">

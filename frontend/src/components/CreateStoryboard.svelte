@@ -9,6 +9,7 @@
     export let notifications
     export let eventTag
     export let router
+    export let apiPrefix = '/api'
 
     let storyboardName = ''
 
@@ -18,7 +19,7 @@
             storyboardName,
         }
 
-        xfetch('/api/storyboard', { body })
+        xfetch(`${apiPrefix}/storyboard`, { body })
             .then(res => res.json())
             .then(function(storyboard) {
                 eventTag('create_storyboard', 'engagement', 'success', () => {

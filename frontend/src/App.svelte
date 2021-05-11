@@ -11,6 +11,10 @@
     import Landing from './pages/Landing.svelte'
     import Storyboards from './pages/Storyboards.svelte'
     import Storyboard from './pages/Storyboard.svelte'
+    import Organizations from './pages/Organizations.svelte'
+    import Organization from './pages/Organization.svelte'
+    import Department from './pages/Department.svelte'
+    import Team from './pages/Team.svelte'
     import Register from './pages/Register.svelte'
     import Login from './pages/Login.svelte'
     import ResetPassword from './pages/ResetPassword.svelte'
@@ -86,6 +90,51 @@
         .on(`${appRoutes.storyboard}/:storyboardId`, params => {
             currentPage = {
                 route: Storyboard,
+                params,
+            }
+        })
+        .on(appRoutes.organizations, () => {
+            currentPage = {
+                route: Organizations,
+                params: {},
+            }
+        })
+        .on(`${appRoutes.organization}/:organizationId`, params => {
+            currentPage = {
+                route: Organization,
+                params,
+            }
+        })
+        .on(
+            `${appRoutes.organization}/:organizationId/team/:teamId`,
+            params => {
+                currentPage = {
+                    route: Team,
+                    params,
+                }
+            },
+        )
+        .on(
+            `${appRoutes.organization}/:organizationId/department/:departmentId`,
+            params => {
+                currentPage = {
+                    route: Department,
+                    params,
+                }
+            },
+        )
+        .on(
+            `${appRoutes.organization}/:organizationId/department/:departmentId/team/:teamId`,
+            params => {
+                currentPage = {
+                    route: Team,
+                    params,
+                }
+            },
+        )
+        .on(`${appRoutes.team}/:teamId`, params => {
+            currentPage = {
+                route: Team,
                 params,
             }
         })
@@ -173,6 +222,14 @@
                     additionalClasses="mr-2">
                     My Storyboards
                 </HollowButton>
+                {#if activeUser.type !== 'GUEST'}
+                    <HollowButton
+                        color="blue"
+                        href="{appRoutes.organizations}"
+                        additionalClasses="mr-2">
+                        Organizations &amp; Teams
+                    </HollowButton>
+                {/if}
                 {#if !activeUser.type || activeUser.type === 'GUEST'}
                     {#if AllowRegistration}
                         <HollowButton

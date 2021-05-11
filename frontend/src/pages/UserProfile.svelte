@@ -216,7 +216,7 @@
     }
 
     function handleDeleteAccount() {
-        xfetch(`/api/user/${$user.id}`, { method: "DELETE" })
+        xfetch(`/api/user/${$user.id}`, { method: 'DELETE' })
             .then(function() {
                 user.delete()
 
@@ -226,7 +226,7 @@
             })
             .catch(function() {
                 notifications.danger(
-                    'Error encountered attempting to delete your account.'
+                    'Error encountered attempting to delete your account.',
                 )
                 eventTag('delete_user', 'engagement', 'failure')
             })
@@ -516,7 +516,7 @@
         {/if}
 
         <div class="w-full text-center">
-            <HollowButton onClick={toggleDeleteAccount} color="red">
+            <HollowButton onClick="{toggleDeleteAccount}" color="red">
                 Delete Account
             </HollowButton>
         </div>
@@ -532,8 +532,6 @@
     {/if}
 
     {#if showAccountDeletion}
-        <DeleteUser
-            {toggleDeleteAccount}
-            {handleDeleteAccount} />
+        <DeleteUser {toggleDeleteAccount} {handleDeleteAccount} />
     {/if}
 </PageLayout>

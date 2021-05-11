@@ -38,7 +38,9 @@
 
             <form on:submit="{handleSubmit}" name="addColumn">
                 <div class="mb-4">
-                    <label class="block text-sm font-bold mb-2" for="columnName">
+                    <label
+                        class="block text-sm font-bold mb-2"
+                        for="columnName">
                         Column Name
                     </label>
                     <input
@@ -54,7 +56,11 @@
                 </div>
                 <div class="flex">
                     <div class="md:w-1/2 text-left">
-                        <HollowButton color="red" onClick={deleteColumn(column.id)}>Delete Column</HollowButton>
+                        <HollowButton
+                            color="red"
+                            onClick="{deleteColumn(column.id)}">
+                            Delete Column
+                        </HollowButton>
                     </div>
                     <div class="md:w-1/2 text-right">
                         <SolidButton type="submit">Save</SolidButton>

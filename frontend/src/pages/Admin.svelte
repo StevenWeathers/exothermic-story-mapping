@@ -21,6 +21,9 @@
         unregisteredUserCount: 0,
         registeredUserCount: 0,
         storyboardCount: 0,
+        organizationCount: 0,
+        departmentCount: 0,
+        teamCount: 0,
     }
     let users = []
     let showCreateUser = false
@@ -179,13 +182,29 @@
                     {appStats.storyboardCount}
                 </div>
             </div>
+            <div
+                class="flex flex-wrap items-center text-center pt-2 pb-2 md:pt-4
+                md:pb-4 bg-white shadow-lg rounded text-xl">
+                <div class="w-1/3">
+                    <div class="mb-2 font-bold">Organizations</div>
+                    {appStats.organizationCount}
+                </div>
+                <div class="w-1/3">
+                    <div class="mb-2 font-bold">Departments</div>
+                    {appStats.departmentCount}
+                </div>
+                <div class="w-1/3">
+                    <div class="mb-2 font-bold">Teams</div>
+                    {appStats.teamCount}
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="flex justify-center mb-4">
         <div class="w-full">
             <div
-            class="text-center p-2 md:p-4 bg-white shadow-lg rounded text-xl">
+                class="text-center p-2 md:p-4 bg-white shadow-lg rounded text-xl">
                 <div class="text-2xl md:text-3xl font-bold text-center mb-4">
                     Maintenance
                 </div>
@@ -194,7 +213,8 @@
                 </HollowButton>
 
                 <HollowButton onClick="{cleanStoryboards}" color="red">
-                    Clean Storyboards older than {CleanupStoryboardsDaysOld} days
+                    Clean Storyboards older than {CleanupStoryboardsDaysOld}
+                    days
                 </HollowButton>
             </div>
         </div>
@@ -255,9 +275,13 @@
             </table>
 
             {#if appStats.registeredUserCount > usersPageLimit}
-            <div class="pt-6 flex justify-center">
-                <Pagination bind:current={usersPage} num_items={appStats.registeredUserCount} per_page={usersPageLimit} on:navigate={changePage} />
-            </div>
+                <div class="pt-6 flex justify-center">
+                    <Pagination
+                        bind:current="{usersPage}"
+                        num_items="{appStats.registeredUserCount}"
+                        per_page="{usersPageLimit}"
+                        on:navigate="{changePage}" />
+                </div>
             {/if}
         </div>
     </div>

@@ -32,7 +32,7 @@ type ServerConfig struct {
 	SecureCookieName string
 	// controls whether or not the cookie is set to secure, only works over HTTPS
 	SecureCookieFlag bool
-	// email to promote a user to GENERAL on app startup
+	// email to promote a user to ADMIN on app startup
 	// the user should already be registered for this to work
 	AdminEmail string
 	// Whether or not to enable google analytics tracking

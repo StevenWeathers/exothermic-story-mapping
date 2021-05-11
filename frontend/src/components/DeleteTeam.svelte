@@ -3,8 +3,8 @@
     import CloseIcon from './icons/CloseIcon.svelte'
     import { _ } from '../i18n'
 
-    export let handleDeleteAccount = () => {}
-    export let toggleDeleteAccount = () => {}
+    export let handleDelete = () => {}
+    export let toggleDelete = () => {}
 </script>
 
 <div
@@ -19,7 +19,7 @@
                 <div class="flex justify-end mb-2">
                     <button
                         aria-label="close"
-                        on:click="{toggleDeleteAccount}"
+                        on:click="{toggleDelete}"
                         class="text-gray-800">
                         <CloseIcon />
                     </button>
@@ -27,8 +27,9 @@
 
                 <div class="mb-4">
                     <p class="font-bold text-xl text-red-600">
-                        Are you sure you want to delete your account, this
-                        cannot be undone.
+                        Are you sure you want to delete this team?
+                        <br />
+                        This cannot be undone.
                     </p>
                 </div>
                 <div class="text-right">
@@ -36,11 +37,11 @@
                         type="button"
                         class="inline-block align-baseline font-bold text-sm
                         text-blue-500 hover:text-blue-800 mr-4"
-                        on:click="{toggleDeleteAccount}">
+                        on:click="{toggleDelete}">
                         Cancel
                     </button>
-                    <SolidButton onClick="{handleDeleteAccount}" color="red">
-                        Delete Account
+                    <SolidButton onClick="{handleDelete}" color="red">
+                        Delete Team
                     </SolidButton>
                 </div>
             </div>
