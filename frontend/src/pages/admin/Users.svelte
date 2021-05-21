@@ -1,26 +1,28 @@
 <script>
     import { onMount } from 'svelte'
 
-    import PageLayout from '../components/PageLayout.svelte'
-    import HollowButton from '../components/HollowButton.svelte'
-    import CreateUser from '../components/CreateUser.svelte'
-    import Pagination from '../components/Pagination.svelte'
-    import { user } from '../stores.js'
-    import { appRoutes } from '../config'
-    import { _ } from '../i18n'
+    import AdminPageLayout from '../../components/AdminPageLayout.svelte'
+    import HollowButton from '../../components/HollowButton.svelte'
+    import CreateUser from '../../components/CreateUser.svelte'
+    import Pagination from '../../components/Pagination.svelte'
+    import CountryFlag from '../../components/CountryFlag.svelte'
+    import CheckIcon from '../../components/icons/CheckIcon.svelte'
+    import { user } from '../../stores.js'
+    import { _ } from '../../i18n'
+    import { appRoutes } from '../../config'
 
     export let xfetch
     export let router
     export let notifications
     export let eventTag
 
-    const { CleanupGuestsDaysOld, CleanupStoryboardsDaysOld } = appConfig
     const usersPageLimit = 100
 
     let appStats = {
         unregisteredUserCount: 0,
         registeredUserCount: 0,
-        storyboardCount: 0,
+        battleCount: 0,
+        planCount: 0,
         organizationCount: 0,
         departmentCount: 0,
         teamCount: 0,
@@ -43,14 +45,14 @@
 
         xfetch('/api/admin/user', { body })
             .then(function() {
-                eventTag('create_account', 'engagement', 'success')
+                eventTag('admin_create_user', 'engagement', 'success')
 
                 getUsers()
                 toggleCreateUser()
             })
             .catch(function(error) {
                 notifications.danger('Error encountered creating user')
-                eventTag('create_account', 'engagement', 'failure')
+                eventTag('admin_create_user', 'engagement', 'failure')
             })
     }
 
@@ -115,35 +117,9 @@
         }
     }
 
-    function cleanStoryboards() {
-        xfetch('/api/admin/clean-storyboards', { method: 'DELETE' })
-            .then(function() {
-                eventTag('admin_clean_storyboards', 'engagement', 'success')
-
-                getAppStats()
-            })
-            .catch(function(error) {
-                notifications.danger('Error encountered cleaning storyboards')
-                eventTag('admin_clean_storyboards', 'engagement', 'failure')
-            })
-    }
-
-    function cleanGuests() {
-        xfetch('/api/admin/clean-guests', { method: 'DELETE' })
-            .then(function() {
-                eventTag('admin_clean_guests', 'engagement', 'success')
-
-                getAppStats()
-            })
-            .catch(function(error) {
-                notifications.danger('Error encountered cleaning guests')
-                eventTag('admin_clean_guests', 'engagement', 'failure')
-            })
-    }
-
     const changePage = evt => {
         usersPage = evt.detail
-        getusers()
+        getUsers()
     }
 
     onMount(() => {
@@ -159,65 +135,9 @@
     })
 </script>
 
-<PageLayout>
+<AdminPageLayout activePage="users">
     <div class="text-center px-2 mb-4">
-        <h1 class="text-3xl md:text-4xl font-bold">Admin</h1>
-    </div>
-
-    <div class="flex justify-center mb-4">
-        <div class="w-full">
-            <div
-                class="flex flex-wrap items-center text-center pt-2 pb-2 md:pt-4
-                md:pb-4 bg-white shadow-lg rounded text-xl">
-                <div class="w-1/3">
-                    <div class="mb-2 font-bold">Unregistered Users</div>
-                    {appStats.unregisteredUserCount}
-                </div>
-                <div class="w-1/3">
-                    <div class="mb-2 font-bold">Registered Users</div>
-                    {appStats.registeredUserCount}
-                </div>
-                <div class="w-1/3">
-                    <div class="mb-2 font-bold">Storyboards</div>
-                    {appStats.storyboardCount}
-                </div>
-            </div>
-            <div
-                class="flex flex-wrap items-center text-center pt-2 pb-2 md:pt-4
-                md:pb-4 bg-white shadow-lg rounded text-xl">
-                <div class="w-1/3">
-                    <div class="mb-2 font-bold">Organizations</div>
-                    {appStats.organizationCount}
-                </div>
-                <div class="w-1/3">
-                    <div class="mb-2 font-bold">Departments</div>
-                    {appStats.departmentCount}
-                </div>
-                <div class="w-1/3">
-                    <div class="mb-2 font-bold">Teams</div>
-                    {appStats.teamCount}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="flex justify-center mb-4">
-        <div class="w-full">
-            <div
-                class="text-center p-2 md:p-4 bg-white shadow-lg rounded text-xl">
-                <div class="text-2xl md:text-3xl font-bold text-center mb-4">
-                    Maintenance
-                </div>
-                <HollowButton onClick="{cleanGuests}" color="red">
-                    Clean Guests older than {CleanupGuestsDaysOld} days
-                </HollowButton>
-
-                <HollowButton onClick="{cleanStoryboards}" color="red">
-                    Clean Storyboards older than {CleanupStoryboardsDaysOld}
-                    days
-                </HollowButton>
-            </div>
-        </div>
+        <h1 class="text-3xl md:text-4xl font-bold">Users</h1>
     </div>
 
     <div class="w-full">
@@ -240,32 +160,58 @@
             <table class="table-fixed w-full">
                 <thead>
                     <tr>
-                        <th class="w-3/12 px-4 py-2">User Name</th>
-                        <th class="w-3/12 px-4 py-2">User Email</th>
-                        <th class="w-2/12 px-4 py-2">Verified</th>
-                        <th class="w-2/12 px-4 py-2">Type</th>
-                        <th class="w-2/12 px-4 py-2">Actions</th>
+                        <th class="w-3/12 p-2">Name</th>
+                        <th class="w-3/12 p-2">Email</th>
+                        <th class="w-3/12 p-2">Company</th>
+                        <th class="w-2/12 p-2">Type</th>
+                        <th class="w-1/12 p-2"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {#each users as user}
                         <tr>
-                            <td class="border px-4 py-2">{user.name}</td>
-                            <td class="border px-4 py-2">{user.email}</td>
-                            <td class="border px-4 py-2">{user.verified}</td>
-                            <td class="border px-4 py-2">{user.type}</td>
-                            <td class="border px-4 py-2">
+                            <td class="border p-2">
+                                {user.name}
+                                {#if user.country}
+                                    &nbsp;
+                                    <CountryFlag
+                                        country="{user.country}"
+                                        size="{16}"
+                                        additionalClass="inline-block" />
+                                {/if}
+                            </td>
+                            <td class="border p-2">
+                                {user.email}
+                                {#if user.verified}
+                                    &nbsp;
+                                    <span
+                                        class="text-green-600"
+                                        title="Verified">
+                                        <CheckIcon />
+                                    </span>
+                                {/if}
+                            </td>
+                            <td class="border p-2">
+                                <div>{user.company}</div>
+                                {#if user.jobTitle}
+                                    <div class="text-gray-700 text-sm">
+                                        Job Title: {user.jobTitle}
+                                    </div>
+                                {/if}
+                            </td>
+                            <td class="border p-2">{user.type}</td>
+                            <td class="border p-2">
                                 {#if user.type !== 'ADMIN'}
                                     <HollowButton
                                         onClick="{promoteUser(user.id)}"
                                         color="blue">
-                                        {$_('actions.user.promote')}
+                                        Promote
                                     </HollowButton>
                                 {:else}
                                     <HollowButton
                                         onClick="{demoteUser(user.id)}"
                                         color="blue">
-                                        {$_('actions.user.demote')}
+                                        Demote
                                     </HollowButton>
                                 {/if}
                             </td>
@@ -292,4 +238,4 @@
             handleCreate="{createUser}"
             notifications />
     {/if}
-</PageLayout>
+</AdminPageLayout>

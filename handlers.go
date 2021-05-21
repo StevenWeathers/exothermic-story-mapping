@@ -14,6 +14,8 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
+var ActiveAlerts []interface{}
+
 type contextKey string
 
 var (
@@ -177,11 +179,13 @@ func (s *server) handleIndex() http.HandlerFunc {
 		APIEnabled                bool
 		CleanupGuestsDaysOld      int
 		CleanupStoryboardsDaysOld int
+		ShowActiveCountries       bool
 	}
 	type UIConfig struct {
 		AnalyticsEnabled bool
 		AnalyticsID      string
 		AppConfig        AppConfig
+		ActiveAlerts     []interface{}
 	}
 
 	// get the html template from dist, have it ready for requests
@@ -211,7 +215,10 @@ func (s *server) handleIndex() http.HandlerFunc {
 		PathPrefix:                s.config.PathPrefix,
 		CleanupGuestsDaysOld:      viper.GetInt("config.cleanup_guests_days_old"),
 		CleanupStoryboardsDaysOld: viper.GetInt("config.cleanup_storyboards_days_old"),
+		ShowActiveCountries:       viper.GetBool("config.show_active_countries"),
 	}
+
+	ActiveAlerts = s.database.GetActiveAlerts()
 
 	data := UIConfig{
 		AnalyticsEnabled: s.config.AnalyticsEnabled,
@@ -220,6 +227,8 @@ func (s *server) handleIndex() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		data.ActiveAlerts = ActiveAlerts // get latest alerts from memory
+
 		tmpl.Execute(w, data)
 	}
 }

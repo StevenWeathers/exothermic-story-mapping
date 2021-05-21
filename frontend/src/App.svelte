@@ -8,6 +8,7 @@
     import UserIcon from './components/icons/UserIcon.svelte'
     import HollowButton from './components/HollowButton.svelte'
     import LocaleSwitcher from './components/LocaleSwitcher.svelte'
+    import GlobalAlerts from './components/GlobalAlerts.svelte'
     import Landing from './pages/Landing.svelte'
     import Storyboards from './pages/Storyboards.svelte'
     import Storyboard from './pages/Storyboard.svelte'
@@ -20,7 +21,12 @@
     import ResetPassword from './pages/ResetPassword.svelte'
     import UserProfile from './pages/UserProfile.svelte'
     import VerifyAccount from './pages/VerifyAccount.svelte'
-    import Admin from './pages/Admin.svelte'
+    import Admin from './pages/admin/Admin.svelte'
+    import AdminUsers from './pages/admin/Users.svelte'
+    import AdminOrganizations from './pages/admin/Organizations.svelte'
+    import AdminTeams from './pages/admin/Teams.svelte'
+    import AdminApikeys from './pages/admin/ApiKeys.svelte'
+    import AdminAlerts from './pages/admin/Alerts.svelte'
     import { user } from './stores.js'
     import eventTag from './eventTag.js'
     import apiclient from './apiclient.js'
@@ -34,8 +40,7 @@
     let notifications
 
     let activeUser
-
-    const unsubscribe = user.subscribe(w => {
+    user.subscribe(w => {
         activeUser = w
     })
 
@@ -144,6 +149,36 @@
                 params: {},
             }
         })
+        .on(`${appRoutes.admin}/users`, () => {
+            currentPage = {
+                route: AdminUsers,
+                params: {},
+            }
+        })
+        .on(`${appRoutes.admin}/organizations`, () => {
+            currentPage = {
+                route: AdminOrganizations,
+                params: {},
+            }
+        })
+        .on(`${appRoutes.admin}/teams`, () => {
+            currentPage = {
+                route: AdminTeams,
+                params: {},
+            }
+        })
+        .on(`${appRoutes.admin}/apikeys`, () => {
+            currentPage = {
+                route: AdminApikeys,
+                params: {},
+            }
+        })
+        .on(`${appRoutes.admin}/alerts`, () => {
+            currentPage = {
+                route: AdminAlerts,
+                params: {},
+            }
+        })
         .listen()
 
     const xfetch = apiclient(handle401)
@@ -198,6 +233,8 @@
 <Notifications bind:this="{notifications}" />
 
 {#if $isLocaleLoaded}
+    <GlobalAlerts registered="{!!activeUser.name}" />
+
     <nav
         class="flex items-center justify-between flex-wrap bg-exo-grey px-6 py-2"
         role="navigation"

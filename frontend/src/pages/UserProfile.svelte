@@ -10,6 +10,7 @@
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
     import { appRoutes } from '../config'
+    import { countryList } from '../country'
     import CreateApiKey from '../components/CreateApiKey.svelte'
     import { _ } from '../i18n'
 
@@ -86,7 +87,10 @@
         e.preventDefault()
         const body = {
             userName: userProfile.name,
-            UserAvatar: userProfile.avatar,
+            userAvatar: userProfile.avatar,
+            country: userProfile.country,
+            company: userProfile.company,
+            jobTitle: userProfile.jobTitle,
         }
         const validName = validateName(body.userName)
 
@@ -99,7 +103,7 @@
 
         if (noFormErrors) {
             xfetch(`/api/user/${$user.id}`, { body })
-                .then(function(updatedUser) {
+                .then(function() {
                     user.update({
                         id: userProfile.id,
                         name: userProfile.name,
@@ -304,6 +308,75 @@
                             name="yourEmail"
                             type="email"
                             disabled />
+                    </div>
+
+                    <div class="mb-4">
+                        <label
+                            class="block text-gray-700 text-sm font-bold mb-2"
+                            for="yourCountry">
+                            Country
+                        </label>
+
+                        <div class="relative">
+                            <select
+                                bind:value="{userProfile.country}"
+                                class="block appearance-none w-full border-2
+                                border-gray-400 text-gray-700 py-3 px-4 pr-8
+                                rounded leading-tight focus:outline-none
+                                focus:border-purple-500"
+                                id="yourCountry"
+                                name="yourCountry">
+                                <option value="">
+                                    Choose your country (optional)
+                                </option>
+                                {#each countryList as item}
+                                    <option value="{item.abbrev}">
+                                        {item.name} [{item.abbrev}]
+                                    </option>
+                                {/each}
+                            </select>
+                            <div
+                                class="pointer-events-none absolute inset-y-0
+                                right-0 flex items-center px-2 text-gray-700">
+                                <DownCarrotIcon />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label
+                            class="block text-gray-700 text-sm font-bold mb-2"
+                            for="yourCompany">
+                            Company
+                        </label>
+                        <input
+                            bind:value="{userProfile.company}"
+                            placeholder="Enter your company (optional)"
+                            class="bg-gray-200 border-gray-200 border-2
+                            appearance-none rounded w-full py-2 px-3
+                            text-gray-700 leading-tight focus:outline-none
+                            focus:bg-white focus:border-purple-500"
+                            id="yourCompany"
+                            name="yourCompany"
+                            type="text" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label
+                            class="block text-gray-700 text-sm font-bold mb-2"
+                            for="yourJobTitle">
+                            Job Title
+                        </label>
+                        <input
+                            bind:value="{userProfile.jobTitle}"
+                            placeholder="Enter your job title (optional)"
+                            class="bg-gray-200 border-gray-200 border-2
+                            appearance-none rounded w-full py-2 px-3
+                            text-gray-700 leading-tight focus:outline-none
+                            focus:bg-white focus:border-purple-500"
+                            id="yourJobTitle"
+                            name="yourJobTitle"
+                            type="text" />
                     </div>
 
                     {#if isAvatarConfigurable}

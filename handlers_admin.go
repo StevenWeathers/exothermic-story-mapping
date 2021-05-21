@@ -123,3 +123,42 @@ func (s *server) handleCleanGuests() http.HandlerFunc {
 		return
 	}
 }
+
+// handleGetOrganizations gets a list of organizations
+func (s *server) handleGetOrganizations() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		Limit, _ := strconv.Atoi(vars["limit"])
+		Offset, _ := strconv.Atoi(vars["offset"])
+
+		Organizations := s.database.OrganizationList(Limit, Offset)
+
+		s.respondWithJSON(w, http.StatusOK, Organizations)
+	}
+}
+
+// handleGetTeams gets a list of teams
+func (s *server) handleGetTeams() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		Limit, _ := strconv.Atoi(vars["limit"])
+		Offset, _ := strconv.Atoi(vars["offset"])
+
+		Teams := s.database.TeamList(Limit, Offset)
+
+		s.respondWithJSON(w, http.StatusOK, Teams)
+	}
+}
+
+// handleGetAPIKeys gets a list of APIKeys
+func (s *server) handleGetAPIKeys() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		Limit, _ := strconv.Atoi(vars["limit"])
+		Offset, _ := strconv.Atoi(vars["offset"])
+
+		Teams := s.database.GetAPIKeys(Limit, Offset)
+
+		s.respondWithJSON(w, http.StatusOK, Teams)
+	}
+}

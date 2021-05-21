@@ -1,7 +1,7 @@
 ############################
 # STEP 1 build the ui
 ############################
-FROM node:12-alpine as builderNode
+FROM node:14 as builderNode
 
 RUN mkdir /webapp
 COPY ./frontend/ /webapp/frontend/
@@ -11,7 +11,7 @@ COPY ./*.js /webapp/
 WORKDIR /webapp
 # install node packages
 RUN npm set progress=false
-RUN npm ci
+RUN npm ci --no-optional
 # Build the web app
 RUN npm run build
 ############################

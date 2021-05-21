@@ -52,6 +52,10 @@ func (s *server) routes() {
 	s.router.HandleFunc("/api/storyboard/{id}", s.handleStoryboardGet())
 	s.router.HandleFunc("/api/storyboard", s.userOnly(s.handleStoryboardCreate())).Methods("POST")
 	s.router.HandleFunc("/api/storyboards", s.userOnly(s.handleStoryboardsGet()))
+	// country(s)
+	if viper.GetBool("config.show_active_countries") {
+		s.router.HandleFunc("/api/active-countries", s.handleGetActiveCountries()).Methods("GET")
+	}
 	// organization(s)
 	s.router.HandleFunc("/api/organizations/{limit}/{offset}", s.userOnly(s.handleGetOrganizationsByUser())).Methods("GET")
 	s.router.HandleFunc("/api/organizations", s.userOnly(s.handleCreateOrganization())).Methods("POST")
@@ -107,6 +111,13 @@ func (s *server) routes() {
 	s.router.HandleFunc("/api/admin/demote", s.adminOnly(s.handleUserDemote())).Methods("POST")
 	s.router.HandleFunc("/api/admin/clean-storyboards", s.adminOnly(s.handleCleanStoryboards())).Methods("DELETE")
 	s.router.HandleFunc("/api/admin/clean-guests", s.adminOnly(s.handleCleanGuests())).Methods("DELETE")
+	s.router.HandleFunc("/api/admin/organizations/{limit}/{offset}", s.adminOnly(s.handleGetOrganizations())).Methods("GET")
+	s.router.HandleFunc("/api/admin/teams/{limit}/{offset}", s.adminOnly(s.handleGetTeams())).Methods("GET")
+	s.router.HandleFunc("/api/admin/apikeys/{limit}/{offset}", s.adminOnly(s.handleGetAPIKeys())).Methods("GET")
+	s.router.HandleFunc("/api/admin/alerts/{limit}/{offset}", s.adminOnly(s.handleGetAlerts())).Methods("GET")
+	s.router.HandleFunc("/api/admin/alert/{id}", s.adminOnly(s.handleAlertUpdate())).Methods("PUT")
+	s.router.HandleFunc("/api/admin/alert", s.adminOnly(s.handleAlertCreate())).Methods("POST")
+	s.router.HandleFunc("/api/admin/alert", s.adminOnly(s.handleAlertDelete())).Methods("DELETE")
 	// websocket for storyboard
 	s.router.HandleFunc("/api/arena/{id}", s.serveWs())
 	// handle index.html

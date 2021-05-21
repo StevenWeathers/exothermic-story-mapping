@@ -204,11 +204,27 @@ CREATE TABLE IF NOT EXISTS team_storyboard (
     CONSTRAINT tb_storyboard_id FOREIGN KEY(storyboard_id) REFERENCES storyboard(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS alert (
+    id UUID  NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name VARCHAR(256) NOT NULL,
+    type VARCHAR(128) DEFAULT 'NEW',
+    content TEXT NOT NULL,
+    active BOOLEAN DEFAULT true,
+    allow_dismiss BOOLEAN DEFAULT true,
+    registered_only BOOLEAN DEFAULT true,
+    created_date TIMESTAMP DEFAULT NOW(),
+    updated_date TIMESTAMP DEFAULT NOW()
+);
+
 --
 -- Table Alterations
 --
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar VARCHAR(128) DEFAULT 'identicon';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(2);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR(256);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(128);
+
 ALTER TABLE storyboard_user ADD COLUMN IF NOT EXISTS abandoned BOOL DEFAULT false;
 ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS points INTEGER;
 ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS closed BOOL DEFAULT false;
@@ -305,6 +321,11 @@ BEGIN
         WHEN duplicate_object THEN RAISE NOTICE 'storyboard_story constraint ss_column_id_fkey already exists';
     END;
 END $$;
+
+--
+-- Views
+--
+CREATE MATERIALIZED VIEW IF NOT EXISTS active_countries AS SELECT DISTINCT country FROM users;
 
 --
 -- Stored Procedures
@@ -743,6 +764,7 @@ CREATE OR REPLACE PROCEDURE clean_guest_users(daysOld INTEGER)
 LANGUAGE plpgsql AS $$
 BEGIN
     DELETE FROM users WHERE last_active < (NOW() - daysOld * interval '1 day') AND type = 'GUEST';
+    REFRESH MATERIALIZED VIEW active_countries;
 
     COMMIT;
 END;
@@ -753,8 +775,27 @@ CREATE OR REPLACE PROCEDURE delete_user(userId UUID)
 LANGUAGE plpgsql AS $$
 BEGIN
     DELETE FROM users WHERE id = userId;
+    REFRESH MATERIALIZED VIEW active_countries;
 
     COMMIT;
+END;
+$$;
+
+-- Updates a users profile --
+CREATE OR REPLACE PROCEDURE user_profile_update(
+    userId UUID,
+    userName VARCHAR(64),
+    userAvatar VARCHAR(128),
+    userCountry VARCHAR(2),
+    userCompany VARCHAR(256),
+    userJobTitle VARCHAR(128)
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE users
+    SET name = userName, avatar = userAvatar, country = userCountry, company = userCompany, job_title = userJobTitle, last_active = NOW()
+    WHERE id = userId;
+    REFRESH MATERIALIZED VIEW active_countries;
 END;
 $$;
 
@@ -829,11 +870,11 @@ $$ LANGUAGE plpgsql;
 -- Get a User by ID
 DROP FUNCTION IF EXISTS get_user(UUID);
 CREATE FUNCTION get_user(userId UUID) RETURNS table (
-    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), verified BOOL
+    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), verified BOOL, avatar VARCHAR(128), country VARCHAR(2), company VARCHAR(256), jobTitle VARCHAR(128)
 ) AS $$
 BEGIN
     RETURN QUERY
-        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.verified FROM users u WHERE u.id = userId;
+        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.verified, u.avatar, u.country, u.company, u.job_title FROM users u WHERE u.id = userId;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -903,13 +944,22 @@ DROP FUNCTION IF EXISTS get_app_stats(
     OUT registered_user_count INTEGER,
     OUT storyboard_count INTEGER
 );
-CREATE FUNCTION get_app_stats(
+DROP FUNCTION IF EXISTS get_app_stats(
     OUT unregistered_user_count INTEGER,
     OUT registered_user_count INTEGER,
     OUT storyboard_count INTEGER,
     OUT organization_count INTEGER,
     OUT department_count INTEGER,
     OUT team_count INTEGER
+);
+CREATE FUNCTION get_app_stats(
+    OUT unregistered_user_count INTEGER,
+    OUT registered_user_count INTEGER,
+    OUT storyboard_count INTEGER,
+    OUT organization_count INTEGER,
+    OUT department_count INTEGER,
+    OUT team_count INTEGER,
+    OUT apikey_count INTEGER
 ) AS $$
 BEGIN
     SELECT COUNT(*) INTO unregistered_user_count FROM users WHERE email IS NULL;
@@ -918,6 +968,7 @@ BEGIN
     SELECT COUNT(*) INTO organization_count FROM organization;
     SELECT COUNT(*) INTO department_count FROM organization_department;
     SELECT COUNT(*) INTO team_count FROM team;
+    SELECT COUNT(*) INTO apikey_count FROM api_keys;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -987,6 +1038,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Get a list of countries
+CREATE OR REPLACE FUNCTION countries_active() RETURNS table (
+    country VARCHAR(2)
+) AS $$
+BEGIN
+    RETURN QUERY SELECT ac.country FROM active_countries ac;
+END;
+$$ LANGUAGE plpgsql;
+
 --
 -- ORGANIZATIONS --
 --
@@ -1027,9 +1087,9 @@ CREATE OR REPLACE FUNCTION organization_list(
 ) AS $$
 BEGIN
     RETURN QUERY
-        SELECT id, name, created_date, updated_date
-        FROM organization
-        ORDER BY created_date
+        SELECT o.id, o.name, o.created_date, o.updated_date
+        FROM organization o
+        ORDER BY o.created_date
 		LIMIT l_limit
 		OFFSET l_offset;
 END;
@@ -1378,8 +1438,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Get Teams --
-CREATE OR REPLACE FUNCTION team_list_by_user(
-    IN userId UUID,
+CREATE OR REPLACE FUNCTION team_list(
     IN l_limit INTEGER,
     IN l_offset INTEGER
 ) RETURNS table (

@@ -45,7 +45,7 @@ func ComparePasswords(hashedPwd string, plainPwd []byte) bool {
 func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 	var users = make([]*User, 0)
 	rows, err := d.db.Query(
-		`SELECT id, name, email, type, avatar, verified
+		`SELECT id, name, email, type, avatar, verified, country, company, job_title
 		FROM users
 		WHERE email IS NOT NULL
 		LIMIT $1
@@ -59,6 +59,9 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 		for rows.Next() {
 			var w User
 			var userEmail sql.NullString
+			var UserCountry sql.NullString
+			var UserCompany sql.NullString
+			var UserJobTitle sql.NullString
 
 			if err := rows.Scan(&w.UserID,
 				&w.UserName,
@@ -66,10 +69,16 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 				&w.UserType,
 				&w.UserAvatar,
 				&w.Verified,
+				&UserCountry,
+				&UserCompany,
+				&UserJobTitle,
 			); err != nil {
 				log.Println(err)
 			} else {
 				w.UserEmail = userEmail.String
+				w.Country = UserCountry.String
+				w.Company = UserCompany.String
+				w.JobTitle = UserJobTitle.String
 				users = append(users, &w)
 			}
 		}
@@ -81,6 +90,10 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 // GetUser gets a user from db by ID
 func (d *Database) GetUser(UserID string) (*User, error) {
 	var w User
+	var UserEmail sql.NullString
+	var UserCountry sql.NullString
+	var UserCompany sql.NullString
+	var UserJobTitle sql.NullString
 
 	e := d.db.QueryRow(
 		`SELECT * FROM get_user($1);`,
@@ -88,14 +101,23 @@ func (d *Database) GetUser(UserID string) (*User, error) {
 	).Scan(
 		&w.UserID,
 		&w.UserName,
-		&w.UserEmail,
+		&UserEmail,
 		&w.UserType,
 		&w.Verified,
+		&w.UserAvatar,
+		&UserCountry,
+		&UserCompany,
+		&UserJobTitle,
 	)
 	if e != nil {
 		log.Println(e)
 		return nil, errors.New("User Not found")
 	}
+
+	w.UserEmail = UserEmail.String
+	w.Country = UserCountry.String
+	w.Company = UserCompany.String
+	w.JobTitle = UserJobTitle.String
 
 	return &w, nil
 }
@@ -202,12 +224,15 @@ func (d *Database) CreateUserRegistered(UserName string, UserEmail string, UserP
 }
 
 // UpdateUserProfile attempts to update the users profile
-func (d *Database) UpdateUserProfile(UserID string, UserName string, UserAvatar string) error {
+func (d *Database) UpdateUserProfile(UserID string, UserName string, UserAvatar string, Country string, Company string, JobTitle string) error {
 	if _, err := d.db.Exec(
-		`UPDATE users SET name = $2, avatar = $3 WHERE id = $1;`,
+		`call user_profile_update($1, $2, $3, $4, $5, $6);`,
 		UserID,
 		UserName,
 		UserAvatar,
+		Country,
+		Company,
+		JobTitle,
 	); err != nil {
 		log.Println(err)
 		return errors.New("Error attempting to update users profile")
@@ -319,4 +344,31 @@ func (d *Database) DeleteUser(UserID string) error {
 	}
 
 	return nil
+}
+
+// GetActiveCountries gets a list of user countries
+func (d *Database) GetActiveCountries() ([]string, error) {
+	var countries = make([]string, 0)
+
+	rows, err := d.db.Query(`SELECT * FROM countries_active();`)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var country sql.NullString
+			if err := rows.Scan(
+				&country,
+			); err != nil {
+				log.Println(err)
+			} else {
+				if country.String != "" {
+					countries = append(countries, country.String)
+				}
+			}
+		}
+	} else {
+		log.Println(err)
+		return nil, errors.New("error attempting to get active countries")
+	}
+
+	return countries, nil
 }

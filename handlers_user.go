@@ -52,7 +52,7 @@ func (s *server) handleUserProfile() http.HandlerFunc {
 
 		userCookieID := r.Context().Value(contextKeyUserID).(string)
 		if UserID != userCookieID {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
@@ -74,15 +74,18 @@ func (s *server) handleUserProfileUpdate() http.HandlerFunc {
 		keyVal := s.getJSONRequestBody(r, w)
 		UserName := keyVal["userName"].(string)
 		UserAvatar := keyVal["userAvatar"].(string)
+		Country := keyVal["country"].(string)
+		Company := keyVal["company"].(string)
+		JobTitle := keyVal["jobTitle"].(string)
 
 		UserID := vars["id"]
 		userCookieID := r.Context().Value(contextKeyUserID).(string)
 		if UserID != userCookieID {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
-		updateErr := s.database.UpdateUserProfile(UserID, UserName, UserAvatar)
+		updateErr := s.database.UpdateUserProfile(UserID, UserName, UserAvatar, Country, Company, JobTitle)
 		if updateErr != nil {
 			log.Println("error attempting to update user profile : " + updateErr.Error() + "\n")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -118,7 +121,7 @@ func (s *server) handleUserDelete() http.HandlerFunc {
 		UserID := vars["id"]
 		userookieID := r.Context().Value(contextKeyUserID).(string)
 		if UserID != userookieID {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
@@ -178,5 +181,20 @@ func (s *server) handleUserAvatar() http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+	}
+}
+
+// handleGetActiveCountries gets a list of registered users countries
+func (s *server) handleGetActiveCountries() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		countries, err := s.database.GetActiveCountries()
+
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Cache-Control", "max-age=3600") // cache for 1 hour just to decrease load
+		s.respondWithJSON(w, http.StatusOK, countries)
 	}
 }
