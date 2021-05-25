@@ -48,6 +48,7 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 		`SELECT id, name, email, type, avatar, verified, country, company, job_title
 		FROM users
 		WHERE email IS NOT NULL
+		ORDER BY created_date
 		LIMIT $1
 		OFFSET $2
 		`,
