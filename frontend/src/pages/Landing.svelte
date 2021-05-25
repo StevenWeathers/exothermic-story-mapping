@@ -1,6 +1,7 @@
 <script>
     import Countries from '../components/Countries.svelte'
     import CheckIcon from '../components/icons/CheckIcon.svelte'
+    import GithubIcon from '../components/icons/Github.svelte'
     import { appRoutes } from '../config'
 
     import { user } from '../stores.js'
@@ -81,13 +82,13 @@
             <div class="w-1/2">
                 <h3 class="text-2xl font-bold">Open Source</h3>
                 <p class="px-2">
-                    Check out the
+                    Check out the <GithubIcon />
                     <a
                         href="https://github.com/StevenWeathers/exothermic-story-mapping"
                         class="feature-link">
                         repository
                     </a>
-                    at GitHub to request or contribute enhancements, locale
+                    to request or contribute enhancements, locale
                     translations, and bug fixes or to
                     <a
                         href="https://github.com/StevenWeathers/exothermic-story-mapping#donations"

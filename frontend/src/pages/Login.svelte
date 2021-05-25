@@ -108,10 +108,10 @@
                             md:leading-tight text-center">
                             or
                             <a
-                                href="${appRoutes.register}/${storyboardId}"
+                                href="{appRoutes.register}/{storyboardId}"
                                 class="font-bold text-blue-500
                                 hover:text-blue-800">
-                                Regiser
+                                Register
                             </a>
                             to join the Storyboard
                         </div>

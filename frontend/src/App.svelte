@@ -6,6 +6,7 @@
     import { appRoutes } from './config'
     import Notifications from './components/Notifications.svelte'
     import UserIcon from './components/icons/UserIcon.svelte'
+    import GithubIcon from './components/icons/Github.svelte'
     import HollowButton from './components/HollowButton.svelte'
     import LocaleSwitcher from './components/LocaleSwitcher.svelte'
     import GlobalAlerts from './components/GlobalAlerts.svelte'
@@ -318,7 +319,7 @@
         {xfetch} />
 
     <footer class="p-6 text-center">
-        <a
+        <GithubIcon />&nbsp;<a
             href="https://github.com/StevenWeathers/exothermic-story-mapping"
             class="{footerLinkClasses}">
             {$_('appName')}
