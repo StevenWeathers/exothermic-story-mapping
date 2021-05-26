@@ -266,7 +266,12 @@
                 } else if (e.code === 4001) {
                     eventTag('socket_unauthorized', 'storyboard', '', () => {
                         user.delete()
-                        router.route(`${appRoutes.register}/${storyboardId}`)
+                        router.route(`${appRoutes.login}/${storyboardId}`)
+                    })
+                } else if (e.code === 4003) {
+                    eventTag('socket_duplicate', 'storyboard', '', () => {
+                        notifications.danger(`Duplicate storyboard session exists for your ID`)
+                        router.route(`${appRoutes.storyboards}`)
                     })
                 } else if (e.code === 4002) {
                     eventTag(
