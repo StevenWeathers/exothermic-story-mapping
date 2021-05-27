@@ -28,7 +28,7 @@ docker pull stevenweathers/exothermic-story-mapping
 [![](https://img.shields.io/github/v/release/stevenweathers/exothermic-story-mapping?include_prereleases)](https://github.com/StevenWeathers/exothermic-story-mapping/releases/latest)
 
 # Configuration
-Thunderdome may be configured through environment variables or via a yaml file `config.yaml`
+Exothermic may be configured through environment variables or via a yaml file `config.yaml`
 located in one of:
 
 * `/etc/exothermic/`
@@ -50,16 +50,16 @@ db:
 
 ## Required configuration items
 
-For Thunderdome to work correctly the following configuration items are required:
+For Exothermic to work correctly the following configuration items are required:
 
 | Option                     | Environment Variable | Description                                | Default Value           |
 | -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
-| `http.domain`              | APP_DOMAIN           | The domain/base URL for this instance of Thunderdome.  Used for creating URLs in emails. | exothermic.dev |
+| `http.domain`              | APP_DOMAIN           | The domain/base URL for this instance of Exothermic.  Used for creating URLs in emails. | exothermic.dev |
 | `http.cookie_hashkey`      | COOKIE_HASHKEY       | Secret used to make secure cookies secure. | pyrom-maniac |
 
 ### Database configuration
 
-Thunderdome uses a Postgres database to store all data, the following configuration options exist: 
+Exothermic uses a Postgres database to store all data, the following configuration options exist: 
 
 | Option                     | Environment Variable | Description                                | Default Value           |
 | -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
@@ -72,7 +72,7 @@ Thunderdome uses a Postgres database to store all data, the following configurat
 
 ### SMTP (Mail) server configuration
 
-Thunderdome sends emails for user registration related activities, the following configuration options exist:
+Exothermic sends emails for user registration related activities, the following configuration options exist:
 
 | Option                     | Environment Variable | Description                                | Default Value           |
 | -------------------------- | -------------------- | ------------------------------------------ | ------------------------|
@@ -80,7 +80,7 @@ Thunderdome sends emails for user registration related activities, the following
 | `smtp.port`                | SMTP_PORT            | Smtp server port number.                   | 25 |
 | `smtp.secure`              | SMTP_SECURE          | Set to authenticate with the Smtp server.  | true |
 | `smtp.identity`            | SMTP_IDENTITY        | Smtp server authorization identity.  Usually unset. | |
-| `smtp.sender`              | SMTP_SENDER          | From address in emails sent by Thunderdome. | no-reply@exothermic.dev |
+| `smtp.sender`              | SMTP_SENDER          | From address in emails sent by Exothermic. | no-reply@exothermic.dev |
 
 ## Optional configuration items
 
@@ -124,7 +124,7 @@ Use the name from table below to configure a service - if not set, `goadorable` 
 ## LDAP Configuration
 
 If `auth.method` is set to `ldap`, then the Create Account function is disabled and authentication
-is done using LDAP.  If the LDAP server authenticates a new user successfully, the Thunderdome user 
+is done using LDAP.  If the LDAP server authenticates a new user successfully, the Exothermic user 
 profile is automatically generated.
 
 The following configuration options are specific to the LDAP authentication method:
@@ -206,6 +206,12 @@ npm run build
 go build
 ```
 
+## Running with Watch (uses webapp dist files on OS instead of embedded)
+```
+npm run autobuild
+make dev-go
+```
+
 # Run Locally
 
 Run the server and visit [http://localhost:8080](http://localhost:8080)
@@ -220,6 +226,6 @@ Adding new locale's involves just a couple of steps.
 
 # Donations
 
-For those who would like to donate a small amount for my efforts or monthly hosting costs of Thunderdome.dev I accept paypal.
+For those who would like to donate a small amount for my efforts or monthly hosting costs of Exothermic.dev I accept paypal.
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/smweathers?locale.x=en_US)
