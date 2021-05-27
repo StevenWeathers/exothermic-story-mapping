@@ -116,13 +116,15 @@ type APIKey struct {
 
 // ApplicationStats includes user, storyboard counts
 type ApplicationStats struct {
-	RegisteredCount   int `json:"registeredUserCount"`
-	UnregisteredCount int `json:"unregisteredUserCount"`
-	StoryboardCount   int `json:"storyboardCount"`
-	OrganizationCount int `json:"organizationCount"`
-	DepartmentCount   int `json:"departmentCount"`
-	TeamCount         int `json:"teamCount"`
-	APIKeyCount       int `json:"apikeyCount"`
+	RegisteredCount           int `json:"registeredUserCount"`
+	UnregisteredCount         int `json:"unregisteredUserCount"`
+	StoryboardCount           int `json:"storyboardCount"`
+	OrganizationCount         int `json:"organizationCount"`
+	DepartmentCount           int `json:"departmentCount"`
+	TeamCount                 int `json:"teamCount"`
+	APIKeyCount               int `json:"apikeyCount"`
+	ActiveStoryboardCount     int `json:"activeStoryboardCount"`
+	ActiveStoryboardUserCount int `json:"activeStoryboardUserCount"`
 }
 
 // Organization can be a company

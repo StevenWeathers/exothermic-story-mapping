@@ -26,6 +26,8 @@
         departmentCount: 0,
         teamCount: 0,
         apikeyCount: 0,
+        activeStoryboardCount: 0,
+        activeStoryboardUserCount: 0
     }
 
     function getAppStats() {
@@ -83,6 +85,18 @@
     </div>
     <div class="flex justify-center mb-4">
         <div class="w-full">
+            <div
+                class="flex flex-wrap items-center text-center pt-2 pb-2 md:pt-4
+                md:pb-4 bg-white shadow-lg rounded text-xl">
+                <div class="w-1/2">
+                    <div class="mb-2 font-bold">Active Storyboards</div>
+                    {appStats.activeStoryboardCount}
+                </div>
+                <div class="w-1/2">
+                    <div class="mb-2 font-bold">Active Storyboards Users</div>
+                    {appStats.activeStoryboardUserCount}
+                </div>
+            </div>
             <div
                 class="flex flex-wrap items-center text-center pt-2 pb-2 md:pt-4
                 md:pb-4 bg-white shadow-lg rounded text-xl">
