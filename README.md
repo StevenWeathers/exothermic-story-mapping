@@ -129,7 +129,7 @@ profile is automatically generated.
 
 The following configuration options are specific to the LDAP authentication method:
 
-| Option                      | Description                                                        |
+| Option                      | Environment Variable | Description                                                        |
 | --------------------------- | -------------------- | ------------------------------------------------------------------ |
 | `auth.ldap.url`             | AUTH_LDAP_URL        | URL to LDAP server, typically `ldap://host:port`                   |
 | `auth.ldap.use_tls`         | AUTH_LDAP_USE_TLS    | Create a TLS connection after establishing the initial connection. |
