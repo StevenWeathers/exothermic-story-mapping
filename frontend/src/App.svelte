@@ -319,7 +319,9 @@
         {xfetch} />
 
     <footer class="p-6 text-center">
-        <GithubIcon />&nbsp;<a
+        <GithubIcon />
+        &nbsp;
+        <a
             href="https://github.com/StevenWeathers/exothermic-story-mapping"
             class="{footerLinkClasses}">
             {$_('appName')}

@@ -24,17 +24,16 @@
     }
 </script>
 
-<Modal closeModal={toggleAddGoal}>
+<Modal closeModal="{toggleAddGoal}">
     <form on:submit="{handleSubmit}" name="addGoal">
         <div class="mb-4">
             <label class="block text-sm font-bold mb-2" for="goalName">
                 Goal Name
             </label>
             <input
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="goalName"
                 type="text"
                 bind:value="{goalName}"

@@ -16,7 +16,7 @@
     $: createDisabled = departmentName === ''
 </script>
 
-<Modal closeModal={toggleCreate}>
+<Modal closeModal="{toggleCreate}">
     <form on:submit="{onSubmit}" name="createDepartment">
         <div class="mb-4">
             <label
@@ -27,10 +27,9 @@
             <input
                 bind:value="{departmentName}"
                 placeholder="Enter an department name"
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="departmentName"
                 name="departmentName"
                 required />

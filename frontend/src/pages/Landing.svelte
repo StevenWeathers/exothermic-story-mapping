@@ -82,14 +82,15 @@
             <div class="w-1/2">
                 <h3 class="text-2xl font-bold">Open Source</h3>
                 <p class="px-2">
-                    Check out the <GithubIcon />
+                    Check out the
+                    <GithubIcon />
                     <a
                         href="https://github.com/StevenWeathers/exothermic-story-mapping"
                         class="feature-link">
                         repository
                     </a>
-                    to request or contribute enhancements, locale
-                    translations, and bug fixes or to
+                    to request or contribute enhancements, locale translations,
+                    and bug fixes or to
                     <a
                         href="https://github.com/StevenWeathers/exothermic-story-mapping#donations"
                         class="feature-link">

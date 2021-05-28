@@ -47,7 +47,7 @@
     $: createDisabled = alertName === '' || alertType === '' || content === ''
 </script>
 
-<Modal closeModal={toggleClose}>
+<Modal closeModal="{toggleClose}">
     <form on:submit="{onSubmit}" name="createAlert">
         <div class="mb-4">
             <label
@@ -58,10 +58,9 @@
             <input
                 bind:value="{alertName}"
                 placeholder="Enter an alert name"
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="alertName"
                 name="alertName"
                 required />
@@ -76,20 +75,17 @@
                     name="alertType"
                     bind:value="{alertType}"
                     required
-                    class="block appearance-none w-full border-2
-                    border-gray-400 text-gray-700 py-3 px-4 pr-8 rounded
-                    leading-tight focus:outline-none
-                    focus:border-purple-500">
-                    <option value="" disabled>
-                        Choose an Alert type
-                    </option>
+                    class="block appearance-none w-full border-2 border-gray-400
+                    text-gray-700 py-3 px-4 pr-8 rounded leading-tight
+                    focus:outline-none focus:border-purple-500">
+                    <option value="" disabled>Choose an Alert type</option>
                     {#each alertTypes as aType}
                         <option value="{aType}">{aType}</option>
                     {/each}
                 </select>
                 <div
-                    class="pointer-events-none absolute inset-y-0
-                    right-0 flex items-center px-2 text-gray-700">
+                    class="pointer-events-none absolute inset-y-0 right-0 flex
+                    items-center px-2 text-gray-700">
                     <DownCarrotIcon />
                 </div>
             </div>
@@ -104,10 +100,9 @@
             <input
                 bind:value="{content}"
                 placeholder="Enter alert content"
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="alertContent"
                 name="alertContent"
                 required />

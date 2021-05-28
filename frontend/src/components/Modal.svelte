@@ -3,6 +3,7 @@
 
     export let closeModal = () => {}
 </script>
+
 <div
     class="fixed inset-0 flex items-center z-40 max-h-screen overflow-y-scroll">
     <div class="fixed inset-0 bg-gray-900 opacity-75"></div>

@@ -7,6 +7,6 @@
     export let handleCreate = () => {}
 </script>
 
-<Modal closeModal={toggleCreate}>
+<Modal closeModal="{toggleCreate}">
     <UserRegisterForm handleSubmit="{handleCreate}" {notifications} />
 </Modal>

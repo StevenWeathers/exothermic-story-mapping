@@ -16,6 +16,7 @@
     import EditIcon from '../components/icons/EditIcon.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
     import CommentIcon from '../components/icons/CommentIcon.svelte'
+    import DeleteStoryboard from '../components/DeleteStoryboard.svelte'
     import { appRoutes, PathPrefix } from '../config'
     import { user } from '../stores.js'
 
@@ -50,6 +51,7 @@
     let showPersonasForm = null
     let editColumn = null
     let activeStory = null
+    let showDeleteStoryboard = false
 
     // event handlers
     const addStory = (goalId, columnId) => () => {
@@ -270,7 +272,9 @@
                     })
                 } else if (e.code === 4003) {
                     eventTag('socket_duplicate', 'storyboard', '', () => {
-                        notifications.danger(`Duplicate storyboard session exists for your ID`)
+                        notifications.danger(
+                            `Duplicate storyboard session exists for your ID`,
+                        )
                         router.route(`${appRoutes.storyboards}`)
                     })
                 } else if (e.code === 4002) {
@@ -375,6 +379,10 @@
             'storyboard',
             `show: ${showPersonasForm}`,
         )
+    }
+
+    const toggleDeleteStoryboard = () => {
+        showDeleteStoryboard = !showDeleteStoryboard
     }
 
     let showAddGoal = false
@@ -594,7 +602,7 @@
                     </HollowButton>
                     <HollowButton
                         color="red"
-                        onClick="{concedeStoryboard}"
+                        onClick="{toggleDeleteStoryboard}"
                         additionalClasses="mr-2">
                         Delete Storyboard
                     </HollowButton>
@@ -947,4 +955,10 @@
         persona="{showPersonasForm}"
         {handlePersonaAdd}
         {handlePersonaRevision} />
+{/if}
+
+{#if showDeleteStoryboard}
+    <DeleteStoryboard
+        toggleDelete="{toggleDeleteStoryboard}"
+        handleDelete="{concedeStoryboard}" />
 {/if}

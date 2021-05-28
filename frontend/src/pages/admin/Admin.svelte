@@ -27,7 +27,7 @@
         teamCount: 0,
         apikeyCount: 0,
         activeStoryboardCount: 0,
-        activeStoryboardUserCount: 0
+        activeStoryboardUserCount: 0,
     }
 
     function getAppStats() {
@@ -129,10 +129,10 @@
                     {appStats.teamCount}
                 </div>
                 {#if APIEnabled}
-                <div class="w-1/4">
-                    <div class="mb-2 font-bold">API Keys</div>
-                    {appStats.apikeyCount}
-                </div>
+                    <div class="w-1/4">
+                        <div class="mb-2 font-bold">API Keys</div>
+                        {appStats.apikeyCount}
+                    </div>
                 {/if}
             </div>
         </div>

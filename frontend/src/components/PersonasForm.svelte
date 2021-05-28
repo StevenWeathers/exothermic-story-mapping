@@ -29,19 +29,16 @@
     }
 </script>
 
-<Modal closeModal={toggleEditPersona}>
+<Modal closeModal="{toggleEditPersona}">
     <form on:submit="{handleSubmit}" name="addPersona">
         <div class="mb-4">
-            <label
-                class="block text-sm font-bold mb-2"
-                for="personaName">
+            <label class="block text-sm font-bold mb-2" for="personaName">
                 Persona Name
             </label>
             <input
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="personaName"
                 type="text"
                 bind:value="{persona.name}"
@@ -49,21 +46,17 @@
                 name="personaName" />
         </div>
         <div class="mb-4">
-            <label
-                class="block text-sm font-bold mb-2"
-                for="personaRole">
+            <label class="block text-sm font-bold mb-2" for="personaRole">
                 Persona Role
             </label>
             <input
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="personaRole"
                 type="text"
                 bind:value="{persona.role}"
-                placeholder="Enter a persona role e.g. Author,
-                Developer, Admin"
+                placeholder="Enter a persona role e.g. Author, Developer, Admin"
                 name="personaRole" />
         </div>
         <div class="mb-4">
@@ -73,10 +66,9 @@
                 Persona Description
             </label>
             <textarea
-                class="bg-gray-200 border-gray-200 border-2
-                appearance-none rounded w-full py-2 px-3 text-gray-700
-                leading-tight focus:outline-none focus:bg-white
-                focus:border-purple-500"
+                class="bg-gray-200 border-gray-200 border-2 appearance-none
+                rounded w-full py-2 px-3 text-gray-700 leading-tight
+                focus:outline-none focus:bg-white focus:border-purple-500"
                 id="personaDescription"
                 bind:value="{persona.description}"
                 placeholder="Enter a persona description"
