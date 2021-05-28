@@ -24,7 +24,7 @@
             Cancel
         </button>
         <SolidButton onClick="{handleDelete}" color="red">
-            Delete Alert
+            Delete Storyboard
         </SolidButton>
     </div>
 </Modal>
