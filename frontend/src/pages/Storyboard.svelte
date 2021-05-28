@@ -243,6 +243,7 @@
                 break
             case 'storyboard_conceded':
                 // storyboard over, goodbye.
+                notifications.warning('Storyboard deleted')
                 router.route(appRoutes.storyboards)
                 break
             default:
