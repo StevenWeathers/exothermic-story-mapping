@@ -181,19 +181,30 @@
     <div class="container mx-auto px-4 py-2 lg:py-4">
         <div class="flex text-center">
             <div class="w-full">
-                <h4 class="font-bold text-xl">
-                    Check out
-                    <a href="https://thunderdome.dev">
-                        <img
-                            src="/img/thunderdome-logo.png"
-                            alt="Thunderdome logo"
-                            title="Thunderdome - Open Source Agile Planning
-                            Poker tool"
-                            class="inline-block mx-2" />
-                    </a>
-                    an open source agile planning poker tool brought to you by
-                    yours truly!
-                </h4>
+                <h2 class="font-bold text-4xl mb-4">Additional Tools</h2>
+                <div class="font-bold text-xl align-middle flex justify-center">
+                    <div class="flex-initial px-4">
+                        <a href="https://thunderdome.dev">
+                            <img
+                                src="/img/thunderdome-logo.png"
+                                alt="Thunderdome logo"
+                                title="Thunderdome - Open Source Agile Planning
+                                Poker tool"
+                                class="inline-block mx-2 mb-1" />
+                        </a><br />
+                        Agile Poker Planning
+                    </div>
+                    <div class="flex-initial px-4">
+                        <a href="https://wakita.dev">
+                            <img
+                                src="/img/wakita-logo.png"
+                                alt="Wakita logo"
+                                title="Wakita - Open Source Agile Retrospective tool"
+                                class="inline-block mx-2 mb-1" /><br />
+                                Agile Retrospective
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
