@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/mail"
 	"net/smtp"
-	"os"
 	"strconv"
 	"time"
 
@@ -46,19 +45,6 @@ type Config struct {
 // Email contains all the methods to send application emails
 type Email struct {
 	config *Config
-}
-
-// GetEnv gets environment variable matching key string
-// and if it finds none uses fallback string
-// returning either the matching or fallback string
-func GetEnv(key string, fallback string) string {
-	var result = os.Getenv(key)
-
-	if result == "" {
-		result = fallback
-	}
-
-	return result
 }
 
 // New creates a new instance of Email

@@ -7,12 +7,13 @@
     import UserAvatar from '../components/UserAvatar.svelte'
     import DeleteUser from '../components/DeleteUser.svelte'
     import DownCarrotIcon from '../components/icons/DownCarrotIcon.svelte'
+    import LocaleSwitcher from '../components/LocaleSwitcher.svelte'
+    import CreateApiKey from '../components/CreateApiKey.svelte'
     import { user } from '../stores.js'
     import { validateName, validatePasswords } from '../validationUtils.js'
     import { appRoutes } from '../config'
     import { countryList } from '../country'
-    import CreateApiKey from '../components/CreateApiKey.svelte'
-    import { _ } from '../i18n'
+    import { _, locale, setupI18n } from '../i18n'
 
     export let xfetch
     export let router
@@ -89,6 +90,7 @@
             userName: userProfile.name,
             userAvatar: userProfile.avatar,
             country: userProfile.country,
+            locale: $locale,
             company: userProfile.company,
             jobTitle: userProfile.jobTitle,
         }
@@ -110,6 +112,7 @@
                         email: userProfile.email,
                         type: userProfile.type,
                         avatar: userProfile.avatar,
+                        locale: $locale
                     })
 
                     notifications.success('Profile updated.', 1500)
@@ -341,6 +344,19 @@
                                 <DownCarrotIcon />
                             </div>
                         </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label
+                            class="block text-gray-700 text-sm font-bold mb-2"
+                            for="yourLocale">
+                            Locale
+                        </label>
+                        <LocaleSwitcher
+                            selectedLocale="{$locale}"
+                            on:locale-changed="{e => setupI18n({
+                                    withLocale: e.detail,
+                                })}" />
                     </div>
 
                     <div class="mb-4">

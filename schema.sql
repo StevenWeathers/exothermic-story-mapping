@@ -225,6 +225,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(2);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR(256);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title VARCHAR(128);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_date TIMESTAMP DEFAULT NOW();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locale VARCHAR(2);
 
 ALTER TABLE storyboard_user ADD COLUMN IF NOT EXISTS abandoned BOOL DEFAULT false;
 ALTER TABLE storyboard_story ADD COLUMN IF NOT EXISTS points INTEGER;
@@ -783,18 +784,35 @@ END;
 $$;
 
 -- Updates a users profile --
-CREATE OR REPLACE PROCEDURE user_profile_update(
+DROP PROCEDURE IF EXISTS user_profile_update(
     userId UUID,
     userName VARCHAR(64),
     userAvatar VARCHAR(128),
     userCountry VARCHAR(2),
     userCompany VARCHAR(256),
     userJobTitle VARCHAR(128)
+);
+CREATE OR REPLACE PROCEDURE user_profile_update(
+    userId UUID,
+    userName VARCHAR(64),
+    userAvatar VARCHAR(128),
+    userCountry VARCHAR(2),
+    userLocale VARCHAR(2),
+    userCompany VARCHAR(256),
+    userJobTitle VARCHAR(128)
 )
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE users
-    SET name = userName, avatar = userAvatar, country = userCountry, company = userCompany, job_title = userJobTitle, last_active = NOW(), updated_date = NOW()
+    SET
+        name = userName,
+        avatar = userAvatar,
+        country = userCountry,
+        locale = userLocale,
+        company = userCompany,
+        job_title = userJobTitle,
+        last_active = NOW(),
+        updated_date = NOW()
     WHERE id = userId;
     REFRESH MATERIALIZED VIEW active_countries;
 END;
@@ -871,11 +889,11 @@ $$ LANGUAGE plpgsql;
 -- Get a User by ID
 DROP FUNCTION IF EXISTS get_user(UUID);
 CREATE FUNCTION get_user(userId UUID) RETURNS table (
-    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), verified BOOL, avatar VARCHAR(128), country VARCHAR(2), company VARCHAR(256), jobTitle VARCHAR(128)
+    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), verified BOOL, avatar VARCHAR(128), country VARCHAR(2), locale VARCHAR(2), company VARCHAR(256), jobTitle VARCHAR(128)
 ) AS $$
 BEGIN
     RETURN QUERY
-        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.verified, u.avatar, u.country, u.company, u.job_title FROM users u WHERE u.id = userId;
+        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.verified, u.avatar, u.country, u.locale, u.company, u.job_title FROM users u WHERE u.id = userId;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -930,11 +948,11 @@ $$ LANGUAGE plpgsql;
 -- Get User Auth by Email
 DROP FUNCTION IF EXISTS get_user_auth_by_email(VARCHAR);
 CREATE FUNCTION get_user_auth_by_email(userEmail VARCHAR(320)) RETURNS table (
-    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), password TEXT
+    id UUID, name VARCHAR(64), email VARCHAR(320), type VARCHAR(128), password TEXT, locale VARCHAR(2)
 ) AS $$
 BEGIN
     RETURN QUERY
-        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.password FROM users u WHERE u.email = userEmail;
+        SELECT u.id, u.name, coalesce(u.email, ''), u.type, u.password, u.locale FROM users u WHERE u.email = userEmail;
 END;
 $$ LANGUAGE plpgsql;
 

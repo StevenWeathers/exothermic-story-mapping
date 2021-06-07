@@ -163,7 +163,7 @@
                     <UserRegisterForm
                         guestUsersName="{userName}"
                         handleSubmit="{createUserRegistered}"
-                        notifications />
+                        {notifications} />
                 </div>
             </div>
         {:else}

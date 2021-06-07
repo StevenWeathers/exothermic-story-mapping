@@ -3,6 +3,7 @@
     import SolidButton from '../components/SolidButton.svelte'
     import { user } from '../stores.js'
     import { appRoutes } from '../config'
+    import { _, setupI18n } from '../i18n'
 
     export let xfetch
     export let router
@@ -37,9 +38,13 @@
                     name: newUser.name,
                     email: newUser.email,
                     type: newUser.type,
+                    locale: newUser.locale,
                 })
 
                 eventTag('login', 'engagement', 'success', () => {
+                    setupI18n({
+                        withLocale: newUser.locale,
+                    })
                     router.route(targetPage, true)
                 })
             })

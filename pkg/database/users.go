@@ -45,7 +45,7 @@ func ComparePasswords(hashedPwd string, plainPwd []byte) bool {
 func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 	var users = make([]*User, 0)
 	rows, err := d.db.Query(
-		`SELECT id, name, email, type, avatar, verified, country, company, job_title
+		`SELECT id, name, email, type, avatar, verified, country, locale, company, job_title
 		FROM users
 		WHERE email IS NOT NULL
 		ORDER BY created_date
@@ -62,6 +62,7 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 			var userEmail sql.NullString
 			var UserCountry sql.NullString
 			var UserCompany sql.NullString
+			var UserLocale sql.NullString
 			var UserJobTitle sql.NullString
 
 			if err := rows.Scan(&w.UserID,
@@ -71,6 +72,7 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 				&w.UserAvatar,
 				&w.Verified,
 				&UserCountry,
+				&UserLocale,
 				&UserCompany,
 				&UserJobTitle,
 			); err != nil {
@@ -78,6 +80,7 @@ func (d *Database) GetRegisteredUsers(Limit int, Offset int) []*User {
 			} else {
 				w.UserEmail = userEmail.String
 				w.Country = UserCountry.String
+				w.Locale = UserLocale.String
 				w.Company = UserCompany.String
 				w.JobTitle = UserJobTitle.String
 				users = append(users, &w)
@@ -94,6 +97,7 @@ func (d *Database) GetUser(UserID string) (*User, error) {
 	var UserEmail sql.NullString
 	var UserCountry sql.NullString
 	var UserCompany sql.NullString
+	var UserLocale sql.NullString
 	var UserJobTitle sql.NullString
 
 	e := d.db.QueryRow(
@@ -107,6 +111,7 @@ func (d *Database) GetUser(UserID string) (*User, error) {
 		&w.Verified,
 		&w.UserAvatar,
 		&UserCountry,
+		&UserLocale,
 		&UserCompany,
 		&UserJobTitle,
 	)
@@ -117,6 +122,7 @@ func (d *Database) GetUser(UserID string) (*User, error) {
 
 	w.UserEmail = UserEmail.String
 	w.Country = UserCountry.String
+	w.Locale = UserLocale.String
 	w.Company = UserCompany.String
 	w.JobTitle = UserJobTitle.String
 
@@ -148,6 +154,7 @@ func (d *Database) GetUserByEmail(UserEmail string) (*User, error) {
 func (d *Database) AuthUser(UserEmail string, UserPassword string) (*User, error) {
 	var w User
 	var passHash string
+	var UserLocale sql.NullString
 
 	e := d.db.QueryRow(
 		`SELECT * FROM get_user_auth_by_email($1)`,
@@ -158,6 +165,7 @@ func (d *Database) AuthUser(UserEmail string, UserPassword string) (*User, error
 		&w.UserEmail,
 		&w.UserType,
 		&passHash,
+		&UserLocale,
 	)
 	if e != nil {
 		log.Println(e)
@@ -167,6 +175,8 @@ func (d *Database) AuthUser(UserEmail string, UserPassword string) (*User, error
 	if ComparePasswords(passHash, []byte(UserPassword)) == false {
 		return nil, errors.New("Password invalid")
 	}
+
+	w.Locale = UserLocale.String
 
 	return &w, nil
 }
@@ -180,7 +190,7 @@ func (d *Database) CreateUserGuest(UserName string) (*User, error) {
 		return nil, errors.New("Unable to create new user")
 	}
 
-	return &User{UserID: UserID, UserName: UserName}, nil
+	return &User{UserID: UserID, UserName: UserName, Locale: "en"}, nil
 }
 
 // CreateUserRegistered adds a new user registered to the db
@@ -225,13 +235,14 @@ func (d *Database) CreateUserRegistered(UserName string, UserEmail string, UserP
 }
 
 // UpdateUserProfile attempts to update the users profile
-func (d *Database) UpdateUserProfile(UserID string, UserName string, UserAvatar string, Country string, Company string, JobTitle string) error {
+func (d *Database) UpdateUserProfile(UserID string, UserName string, UserAvatar string, Country string, Locale string, Company string, JobTitle string) error {
 	if _, err := d.db.Exec(
-		`call user_profile_update($1, $2, $3, $4, $5, $6);`,
+		`call user_profile_update($1, $2, $3, $4, $5, $6, $7);`,
 		UserID,
 		UserName,
 		UserAvatar,
 		Country,
+		Locale,
 		Company,
 		JobTitle,
 	); err != nil {

@@ -32,8 +32,6 @@
     import eventTag from './eventTag.js'
     import apiclient from './apiclient.js'
 
-    setupI18n()
-
     const { AllowRegistration, AppVersion, PathPrefix } = appConfig
     const footerLinkClasses =
         'no-underline text-orange-500 hover:text-orange-800'
@@ -43,6 +41,10 @@
     let activeUser
     user.subscribe(w => {
         activeUser = w
+    })
+
+    setupI18n({
+        withLocale: activeUser ? activeUser.locale : 'en',
     })
 
     let currentPage = {
@@ -303,6 +305,7 @@
                 <HollowButton href="{appRoutes.login}">Login</HollowButton>
             {/if}
             <LocaleSwitcher
+                class="ml-2"
                 selectedLocale="{$locale}"
                 on:locale-changed="{e => setupI18n({
                         withLocale: e.detail,

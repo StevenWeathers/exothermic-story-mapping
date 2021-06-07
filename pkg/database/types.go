@@ -98,6 +98,7 @@ type User struct {
 	UserType   string `json:"type"`
 	Verified   bool   `json:"verified"`
 	Country    string `json:"country"`
+	Locale     string `json:"locale"`
 	Company    string `json:"company"`
 	JobTitle   string `json:"jobTitle"`
 }
