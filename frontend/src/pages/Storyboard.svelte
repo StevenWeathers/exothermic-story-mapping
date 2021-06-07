@@ -20,20 +20,23 @@
     import { appRoutes, PathPrefix } from '../config'
     import { user } from '../stores.js'
 
+    export let storyboardId
+    export let notifications
+    export let router
+    export let eventTag
+
+    const { AllowRegistration } = appConfig
+    const loginOrRegister = AllowRegistration ? appRoutes.register : appRoutes.login
+
+    const hostname = window.location.origin
+    const socketExtension = window.location.protocol === 'https:' ? 'wss' : 'ws'
+
     // instantiate dragula, utilizing drop-column as class for the containers
     const drake = dragula({
         isContainer: function(el) {
             return el.classList.contains('drop-column')
         },
     })
-
-    export let storyboardId
-    export let notifications
-    export let router
-    export let eventTag
-
-    const hostname = window.location.origin
-    const socketExtension = window.location.protocol === 'https:' ? 'wss' : 'ws'
 
     let socketError = false
     let socketReconnecting = false
@@ -457,7 +460,7 @@
 
     onMount(() => {
         if (!$user.id) {
-            router.route(`${appRoutes.login}/${storyboardId}`)
+            router.route(`${loginOrRegister}/${storyboardId}`)
         }
     })
 </script>
