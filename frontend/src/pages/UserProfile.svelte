@@ -112,7 +112,7 @@
                         email: userProfile.email,
                         type: userProfile.type,
                         avatar: userProfile.avatar,
-                        locale: $locale
+                        locale: $locale,
                     })
 
                     notifications.success('Profile updated.', 1500)

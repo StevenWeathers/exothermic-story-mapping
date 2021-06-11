@@ -16,7 +16,7 @@
     "scripts": {
         "build": "rollup --config build/rollup.config.js",
         "autobuild": "rollup --config build/rollup.config.js -w",
-        "format": "prettier --write --plugin-search-dir=. 'frontend/**/*'"
+        "format": "prettier --write --plugin-search-dir=. 'frontend/**/*.{js,svelte,css,html}'"
     },
     "dependencies": {
         "dragula": "^3.7.3",
@@ -27,15 +27,10 @@
         "svelte-i18n": "^3.1.0"
     },
     "devDependencies": {
-        "@babel/core": "^7.12.3",
-        "@babel/preset-env": "^7.12.1",
         "@fullhuman/postcss-purgecss": "^1.3.0",
         "autoprefixer": "^9.8.6",
-        "babel-loader": "^8.0.6",
-        "cross-env": "^5.2.1",
         "husky": "^3.1.0",
         "lint-staged": "^9.5.0",
-        "npm-run-all": "^4.1.5",
         "postcss": "^7.0.35",
         "postcss-import": "^12.0.1",
         "postcss-nesting": "^7.0.1",
@@ -51,7 +46,6 @@
         "rollup-plugin-postcss": "^2.9.0",
         "rollup-plugin-svelte": "^5.2.3",
         "rollup-plugin-terser": "^7.0.2",
-        "standard": "^12.0.1",
         "svelte": "^3.29.0",
         "svelte-loader": "^2.13.6",
         "svelte-preprocess": "^3.9.12",
@@ -59,18 +53,6 @@
     },
     "optionalDependencies": {
         "fsevents": "^1.0.0"
-    },
-    "babel": {
-        "presets": [
-            [
-                "@babel/preset-env",
-                {
-                    "targets": {
-                        "node": "current"
-                    }
-                }
-            ]
-        ]
     },
     "prettier": {
         "singleQuote": true,

@@ -26,7 +26,9 @@
     export let eventTag
 
     const { AllowRegistration } = appConfig
-    const loginOrRegister = AllowRegistration ? appRoutes.register : appRoutes.login
+    const loginOrRegister = AllowRegistration
+        ? appRoutes.register
+        : appRoutes.login
 
     const hostname = window.location.origin
     const socketExtension = window.location.protocol === 'https:' ? 'wss' : 'ws'

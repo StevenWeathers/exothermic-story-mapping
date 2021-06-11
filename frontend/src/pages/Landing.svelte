@@ -191,7 +191,8 @@
                                 title="Thunderdome - Open Source Agile Planning
                                 Poker tool"
                                 class="inline-block mx-2 mb-1" />
-                        </a><br />
+                        </a>
+                        <br />
                         Agile Poker Planning
                     </div>
                     <div class="flex-initial px-4">
@@ -199,9 +200,11 @@
                             <img
                                 src="/img/wakita-logo.png"
                                 alt="Wakita logo"
-                                title="Wakita - Open Source Agile Retrospective tool"
-                                class="inline-block mx-2 mb-1" /><br />
-                                Agile Retrospective
+                                title="Wakita - Open Source Agile Retrospective
+                                tool"
+                                class="inline-block mx-2 mb-1" />
+                            <br />
+                            Agile Retrospective
                         </a>
                     </div>
                 </div>

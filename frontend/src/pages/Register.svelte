@@ -96,14 +96,18 @@
 
 <PageLayout>
     <div class="text-center px-2 mb-4">
-        <h1 class="text-3xl md:text-4xl font-bold">
-            Register
-        </h1>
+        <h1 class="text-3xl md:text-4xl font-bold">Register</h1>
         {#if storyboardId}
             <div
-                class="font-bold text-m md:text-l mb-2 md:mb-6
-                md:leading-tight text-center">
-                or <a href="${appRoutes.login}/${storyboardId}" class="font-bold text-blue-500 hover:text-blue-800">Login</a> to join Storyboard.
+                class="font-bold text-m md:text-l mb-2 md:mb-6 md:leading-tight
+                text-center">
+                or
+                <a
+                    href="${appRoutes.login}/${storyboardId}"
+                    class="font-bold text-blue-500 hover:text-blue-800">
+                    Login
+                </a>
+                to join Storyboard.
             </div>
         {/if}
     </div>
