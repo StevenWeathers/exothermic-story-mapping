@@ -79,6 +79,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>Admin | Exothermic</title>
+</svelte:head>
+
 <AdminPageLayout activePage="admin">
     <div class="text-center px-2 mb-4">
         <h1 class="text-3xl md:text-4xl font-bold">Admin</h1>

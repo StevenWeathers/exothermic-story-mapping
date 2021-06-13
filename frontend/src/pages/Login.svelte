@@ -94,6 +94,10 @@
     $: resetDisabled = userResetEmail === ''
 </script>
 
+<svelte:head>
+    <title>Login | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <div class="flex justify-center">
         <div class="w-full md:w-1/2 lg:w-1/3">

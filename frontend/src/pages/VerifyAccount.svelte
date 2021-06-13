@@ -19,6 +19,10 @@
         })
 </script>
 
+<svelte:head>
+    <title>Verify Account | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <div class="flex justify-center">
         <div class="w-full md:w-1/2 xl:w-1/3 py-4">

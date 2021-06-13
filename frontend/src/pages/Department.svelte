@@ -209,6 +209,10 @@
     $: isAdmin = organizationRole === 'ADMIN' || departmentRole === 'ADMIN'
 </script>
 
+<svelte:head>
+    <title>Department {department.name} | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <h1 class="text-3xl font-bold">Department: {department.name}</h1>
     <div class="font-bold mb-4">

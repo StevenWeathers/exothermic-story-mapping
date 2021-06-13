@@ -143,6 +143,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>Alerts Admin | Exothermic</title>
+</svelte:head>
+
 <AdminPageLayout activePage="alerts">
     <div class="text-center px-2 mb-4">
         <h1 class="text-3xl md:text-4xl font-bold">Alerts</h1>

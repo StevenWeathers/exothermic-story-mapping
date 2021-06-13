@@ -33,6 +33,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>Your Storyboards | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <h1 class="mb-4 text-3xl font-bold">My Storyboards</h1>
 

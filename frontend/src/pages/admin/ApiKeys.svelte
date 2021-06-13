@@ -67,6 +67,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>API Keys Admin | Exothermic</title>
+</svelte:head>
+
 <AdminPageLayout activePage="apikeys">
     <div class="text-center px-2 mb-4">
         <h1 class="text-3xl md:text-4xl font-bold">API Keys</h1>

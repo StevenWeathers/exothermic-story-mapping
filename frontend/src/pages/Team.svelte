@@ -198,6 +198,10 @@
         teamRole !== ''
 </script>
 
+<svelte:head>
+    <title>Team {team.name} | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <h1 class="text-3xl font-bold">Team: {team.name}</h1>
     {#if organizationId}

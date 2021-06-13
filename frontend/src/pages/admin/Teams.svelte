@@ -65,6 +65,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>Teams Admin | Exothermic</title>
+</svelte:head>
+
 <AdminPageLayout activePage="teams">
     <div class="text-center px-2 mb-4">
         <h1 class="text-3xl md:text-4xl font-bold">Teams</h1>

@@ -22,6 +22,10 @@
     }
 </style>
 
+<svelte:head>
+    <title>Exothermic - Open Source Agile Story Mapping app</title>
+</svelte:head>
+
 <section class="bg-exo-red text-exo-grey">
     <div class="container mx-auto px-4 py-6 lg:py-10">
         <div class="flex flex-wrap items-center -mx-4">

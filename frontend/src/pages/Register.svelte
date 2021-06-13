@@ -94,6 +94,10 @@
     $: registerDisabled = userName === ''
 </script>
 
+<svelte:head>
+    <title>Register | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <div class="text-center px-2 mb-4">
         <h1 class="text-3xl md:text-4xl font-bold">Register</h1>

@@ -48,6 +48,10 @@
     $: resetDisabled = userPassword1 === '' || userPassword2 === ''
 </script>
 
+<svelte:head>
+    <title>Reset Password | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <div class="flex justify-center">
         <div class="w-full md:w-1/2 lg:w-1/3">

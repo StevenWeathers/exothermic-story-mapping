@@ -254,6 +254,10 @@
         userPassword1 === '' || userPassword2 === '' || AuthMethod === 'ldap'
 </script>
 
+<svelte:head>
+    <title>Your Profile | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <div class="flex justify-center flex-wrap">
         <div class="w-full md:w-1/2 lg:w-1/3">

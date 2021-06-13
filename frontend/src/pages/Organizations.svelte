@@ -102,6 +102,10 @@
     })
 </script>
 
+<svelte:head>
+    <title>Organizations | Exothermic</title>
+</svelte:head>
+
 <PageLayout>
     <div class="w-full">
         <div class="p-4 md:p-6 bg-white shadow-lg rounded">
