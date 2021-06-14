@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -11,7 +12,7 @@ import (
 func (s *server) handleLogin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyVal := s.getJSONRequestBody(r, w)
-		UserEmail := keyVal["userEmail"].(string)
+		UserEmail := strings.ToLower(keyVal["userEmail"].(string))
 		UserPassword := keyVal["userPassword"].(string)
 
 		authedUser, err := s.authUserDatabase(UserEmail, UserPassword)
@@ -38,7 +39,7 @@ func (s *server) handleLogin() http.HandlerFunc {
 func (s *server) handleLdapLogin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyVal := s.getJSONRequestBody(r, w)
-		UserEmail := keyVal["userEmail"].(string)
+		UserEmail := strings.ToLower(keyVal["userEmail"].(string))
 		UserPassword := keyVal["userPassword"].(string)
 
 		authedUser, err := s.authAndCreateUserLdap(UserEmail, UserPassword)
@@ -107,7 +108,7 @@ func (s *server) handleUserEnlist() http.HandlerFunc {
 
 		UserName, UserEmail, UserPassword, accountErr := ValidateUserAccount(
 			keyVal["userName"].(string),
-			keyVal["userEmail"].(string),
+			strings.ToLower(keyVal["userEmail"].(string)),
 			keyVal["userPassword1"].(string),
 			keyVal["userPassword2"].(string),
 		)
@@ -135,7 +136,7 @@ func (s *server) handleUserEnlist() http.HandlerFunc {
 func (s *server) handleForgotPassword() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyVal := s.getJSONRequestBody(r, w)
-		UserEmail := keyVal["userEmail"].(string)
+		UserEmail := strings.ToLower(keyVal["userEmail"].(string))
 
 		ResetID, UserName, resetErr := s.database.UserResetRequest(UserEmail)
 		if resetErr == nil {

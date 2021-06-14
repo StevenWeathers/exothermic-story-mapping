@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
@@ -50,7 +51,7 @@ func (s *server) handleUserCreate() http.HandlerFunc {
 
 		UserName, UserEmail, UserPassword, accountErr := ValidateUserAccount(
 			keyVal["userName"].(string),
-			keyVal["userEmail"].(string),
+			strings.ToLower(keyVal["userEmail"].(string)),
 			keyVal["userPassword1"].(string),
 			keyVal["userPassword2"].(string),
 		)
