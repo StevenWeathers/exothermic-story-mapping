@@ -20,26 +20,22 @@ builds:
       - arm64
 dockers:
     - image_templates: ["stevenweathers/exothermic-story-mapping:{{ .Tag }}-amd64"]
-      binaries: [exothermic-story-mapping]
       dockerfile: "build/gorDockerfile"
       use_buildx: true
       build_flag_templates:
       - --platform=linux/amd64
     - image_templates: ["stevenweathers/exothermic-story-mapping:{{ .Tag }}-arm64v8"]
-      binaries: [exothermic-story-mapping]
       goarch: arm64
       dockerfile: "build/gorDockerfile"
       use_buildx: true
       build_flag_templates:
       - --platform=linux/arm64/v8
     - image_templates: ["stevenweathers/exothermic-story-mapping:latest-amd64"]
-      binaries: [exothermic-story-mapping]
       dockerfile: "build/gorDockerfile"
       use_buildx: true
       build_flag_templates:
       - --platform=linux/amd64
     - image_templates: ["stevenweathers/exothermic-story-mapping:latest-arm64v8"]
-      binaries: [exothermic-story-mapping]
       goarch: arm64
       dockerfile: "build/gorDockerfile"
       use_buildx: true
