@@ -9,4 +9,6 @@ COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=0 /etc/passwd /etc/passwd
 USER appuser
 
+LABEL org.opencontainers.image.source=https://github.com/StevenWeathers/exothermic-story-mapping
+
 ENTRYPOINT ["/exothermic-story-mapping"]

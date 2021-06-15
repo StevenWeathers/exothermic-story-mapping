@@ -41,6 +41,28 @@ dockers:
       use_buildx: true
       build_flag_templates:
       - --platform=linux/arm64/v8
+    - image_templates: ["ghcr.io/stevenweathers/exothermic-story-mapping:{{ .Tag }}-amd64"]
+      dockerfile: "build/gorDockerfile"
+      use_buildx: true
+      build_flag_templates:
+      - --platform=linux/amd64
+    - image_templates: ["ghcr.io/stevenweathers/exothermic-story-mapping:{{ .Tag }}-arm64v8"]
+      goarch: arm64
+      dockerfile: "build/gorDockerfile"
+      use_buildx: true
+      build_flag_templates:
+      - --platform=linux/arm64/v8
+    - image_templates: ["ghcr.io/stevenweathers/exothermic-story-mapping:latest-amd64"]
+      dockerfile: "build/gorDockerfile"
+      use_buildx: true
+      build_flag_templates:
+      - --platform=linux/amd64
+    - image_templates: ["ghcr.io/stevenweathers/exothermic-story-mapping:latest-arm64v8"]
+      goarch: arm64
+      dockerfile: "build/gorDockerfile"
+      use_buildx: true
+      build_flag_templates:
+      - --platform=linux/arm64/v8
 docker_manifests:
     - name_template: stevenweathers/exothermic-story-mapping:latest
       image_templates:
@@ -50,6 +72,14 @@ docker_manifests:
       image_templates:
       - stevenweathers/exothermic-story-mapping:{{ .Tag }}-amd64
       - stevenweathers/exothermic-story-mapping:{{ .Tag }}-arm64v8
+    - name_template: ghcr.io/stevenweathers/exothermic-story-mapping:latest
+      image_templates:
+      - ghcr.io/stevenweathers/exothermic-story-mapping:latest-amd64
+      - ghcr.io/stevenweathers/exothermic-story-mapping:latest-arm64v8
+    - name_template: ghcr.io/stevenweathers/exothermic-story-mapping:{{ .Tag }}
+      image_templates:
+      - ghcr.io/stevenweathers/exothermic-story-mapping:{{ .Tag }}-amd64
+      - ghcr.io/stevenweathers/exothermic-story-mapping:{{ .Tag }}-arm64v8
 archives:
 - replacements:
     darwin: Darwin
