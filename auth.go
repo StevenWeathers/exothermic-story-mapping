@@ -68,7 +68,7 @@ func (s *server) authAndCreateUserLdap(userUsername string, userPassword string)
 
 	searchRequest := ldap.NewSearchRequest(viper.GetString("auth.ldap.basedn"),
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf(viper.GetString("auth.ldap.filter"), userUsername),
+		fmt.Sprintf(viper.GetString("auth.ldap.filter"), ldap.EscapeFilter(userUsername)),
 		[]string{"dn", viper.GetString("auth.ldap.mail_attr"), viper.GetString("auth.ldap.cn_attr")},
 		nil,
 	)
