@@ -5,7 +5,9 @@
 [![](https://img.shields.io/docker/pulls/stevenweathers/exothermic-story-mapping.svg)](https://hub.docker.com/r/stevenweathers/exothermic-story-mapping)
 [![](https://goreportcard.com/badge/github.com/stevenweathers/exothermic-story-mapping)](https://goreportcard.com/report/github.com/stevenweathers/exothermic-story-mapping)
 
-# Exothermic Story Mapping
+# Exothermic is no longer actively developed, please check out [Thunderdome](https://github.com/StevenWeathers/thunderdome-planning-poker)
+
+## Exothermic Story Mapping
 
 Exothermic is an open source agile story mapping tool, though storyboards are generic enough to be used for multiple excercises.
 
@@ -15,19 +17,19 @@ Each storyboard has the ability to add goals (rows), columns, and stories.
 
 ![image](https://user-images.githubusercontent.com/846933/116486097-cfb1ef80-a85a-11eb-9769-96a9b5737ad9.png)
 
-# Running in production
+## Running in production
 
-## Use latest docker image
+### Use latest docker image
 
 ```
 docker pull stevenweathers/exothermic-story-mapping
 ```
 
-## Use latest released binary
+### Use latest released binary
 
 [![](https://img.shields.io/github/v/release/stevenweathers/exothermic-story-mapping?include_prereleases)](https://github.com/StevenWeathers/exothermic-story-mapping/releases/latest)
 
-# Configuration
+## Configuration
 Exothermic may be configured through environment variables or via a yaml file `config.yaml`
 located in one of:
 
